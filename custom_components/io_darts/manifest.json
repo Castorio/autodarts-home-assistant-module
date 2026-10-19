@@ -1,0 +1,12 @@
+{
+  "domain": "io_darts",
+  "name": "IO-Darts",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["webhook"],
+  "documentation": "https://github.com/Castorio/io-darts-agent",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "requirements": [],
+  "version": "0.1.0"
+}
