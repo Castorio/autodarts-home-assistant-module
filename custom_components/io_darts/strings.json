@@ -36,7 +36,7 @@
       "variant": { "name": "Game variant" },
       "round": { "name": "Round" },
       "hub_version": { "name": "Hub version" },
-      "uptime": { "name": "Hub uptime" },
+      "hub_started": { "name": "Hub started" },
       "running_modules": { "name": "Running modules" }
     },
     "button": {

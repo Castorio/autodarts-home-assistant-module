@@ -44,8 +44,32 @@ async def test_hub_sensors(hass, aioclient_mock):
     assert hass.states.get("binary_sensor.io_darts_board_autodarts_connected").state == "on"
     assert hass.states.get("binary_sensor.io_darts_board_hub_reachable").state == "on"
     assert hass.states.get("sensor.io_darts_board_hub_version").state == "1.2.0"
-    assert hass.states.get("sensor.io_darts_board_hub_uptime").state == "3600"
     assert hass.states.get("sensor.io_darts_board_running_modules").state == "2"
+
+
+async def test_hub_started_is_a_stable_timestamp(hass, aioclient_mock, freezer):
+    freezer.move_to("2026-10-19T12:00:30+00:00")
+    await setup(hass, aioclient_mock)
+    state = hass.states.get("sensor.io_darts_board_hub_started")
+    assert state.state == "2026-10-19T11:00:00+00:00"
+    assert state.attributes["device_class"] == "timestamp"
+    assert hass.states.get("sensor.io_darts_board_hub_uptime") is None
+    # The next poll reports a larger uptime; the start time must not move
+    freezer.tick(timedelta(seconds=31))
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{URL}/api/status", json={**STATUS, "uptime": 3631})
+    aioclient_mock.get(f"{URL}/api/modules", json=MODULES)
+    aioclient_mock.post(routes("/webhook"), json={"registered": True, "changed": False})
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert len(aioclient_mock.mock_calls) == 3
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T11:00:00+00:00"
+
+
+async def test_hub_started_unknown_without_uptime(hass, aioclient_mock):
+    aioclient_mock.get(f"{URL}/api/status", json={**STATUS, "uptime": "soon"})
+    await setup(hass, aioclient_mock)
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "unknown"
 
 
 async def test_push_updates_sensors(hass, aioclient_mock, hass_client_no_auth):

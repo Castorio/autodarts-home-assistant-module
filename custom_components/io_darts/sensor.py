@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -12,9 +13,10 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import IoDartsConfigEntry
 from .coordinator import IoDartsCoordinator
@@ -32,6 +34,15 @@ def _players(c: IoDartsCoordinator) -> dict[str, Any]:
             for p in c.match.get("players", [])
         ]
     }
+
+
+def _hub_started(c: IoDartsCoordinator) -> datetime | None:
+    """Start time of the hub (now - uptime), truncated to the minute so it stays stable between polls."""
+    uptime = c.data.status.get("uptime")
+    if isinstance(uptime, bool) or not isinstance(uptime, (int, float)) or not 0 <= uptime < 10**10:
+        return None
+    started = dt_util.utcnow() - timedelta(seconds=uptime)
+    return started.replace(second=0, microsecond=0)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -53,12 +64,10 @@ SENSORS = (
         value_fn=lambda c: c.data.status.get("version"),
     ),
     IoDartsSensorDescription(
-        key="uptime",
+        key="hub_started",
         entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        value_fn=lambda c: c.data.status.get("uptime"),
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=_hub_started,
     ),
     IoDartsSensorDescription(
         key="running_modules",
