@@ -26,9 +26,12 @@ function body(raw: unknown): Record<string, unknown> {
 export function createRouteHandlers(deps: RouteDeps): Record<string, RouteHandler> {
   return {
     registerWebhook: (req) => {
-      const result = deps.registry.register(body(req.body).url);
+      const url = body(req.body).url;
+      // Only report whether the stored URL changed; never echo a URL back
+      const changed = deps.registry.url !== url;
+      const result = deps.registry.register(url);
       return result.ok
-        ? { statusCode: 200, body: { registered: true } }
+        ? { statusCode: 200, body: { registered: true, changed } }
         : { statusCode: 400, body: { error: result.error } };
     },
     webhookStatus: () => ({ statusCode: 200, body: { registered: deps.registry.url !== null } }),

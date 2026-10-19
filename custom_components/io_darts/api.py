@@ -148,8 +148,16 @@ class HubClient:
             raise HubConnectionError("expected a JSON object from the webhook route")
         return bool(result.get("registered"))
 
-    async def register_webhook(self, url: str) -> None:
-        await self._request("POST", f"{MODULE_ROUTES}/webhook", {"url": url})
+    async def register_webhook(self, url: str) -> bool:
+        """Register (idempotently) and return whether the module's stored URL changed.
+
+        Modules that do not report "changed" are treated as changed, so the
+        caller refetches state rather than missing a re-pointed webhook.
+        """
+        result = await self._request("POST", f"{MODULE_ROUTES}/webhook", {"url": url})
+        if isinstance(result, dict) and isinstance(result.get("changed"), bool):
+            return result["changed"]
+        return True
 
     async def unregister_webhook(self) -> None:
         await self._request("DELETE", f"{MODULE_ROUTES}/webhook")

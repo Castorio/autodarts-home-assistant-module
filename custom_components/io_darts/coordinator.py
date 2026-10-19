@@ -62,11 +62,14 @@ class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
         return HubData(status=status, modules=modules)
 
     async def _sync_module(self) -> None:
-        """Register the webhook when the module lost it, and load its state once."""
+        """Re-register our webhook on every poll; reload state when the module's URL changed.
+
+        POST /webhook is idempotent, so registering every poll also takes the
+        webhook back if the module restarted or was re-pointed elsewhere.
+        """
         try:
-            registered = await self.client.webhook_registered()
-            if not self._synced or not registered:
-                await self.client.register_webhook(self.webhook_url)
+            changed = await self.client.register_webhook(self.webhook_url)
+            if changed or not self._synced:
                 self.match = await self.client.get_match_state()
                 self._synced = True
         except ModuleMissingError:

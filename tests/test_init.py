@@ -21,14 +21,13 @@ async def ha_url(hass):
     await async_process_ha_core_config(hass, {"internal_url": HA_URL})
 
 
-def mock_hub(aioclient_mock, registered=False):
+def mock_hub(aioclient_mock, changed=True, state=MATCH):
     aioclient_mock.post(f"{URL}/api/auth/login", json={"success": True}, cookies={"autodarts_session": "sid"})
     aioclient_mock.get(f"{URL}/api/status", json=STATUS)
     aioclient_mock.get(f"{URL}/api/modules", json=MODULES)
-    aioclient_mock.get(routes("/webhook"), json={"registered": registered})
-    aioclient_mock.post(routes("/webhook"), json={"registered": True})
+    aioclient_mock.post(routes("/webhook"), json={"registered": True, "changed": changed})
     aioclient_mock.delete(routes("/webhook"), json={"registered": False})
-    aioclient_mock.get(routes("/state"), json=MATCH)
+    aioclient_mock.get(routes("/state"), json=state)
 
 
 async def setup_entry(hass):
@@ -56,29 +55,47 @@ async def test_setup_registers_webhook_and_device(hass, aioclient_mock, ha_url):
     assert entry.runtime_data.device_id == device.id
 
 
-async def test_setup_fetches_state_even_if_webhook_is_still_registered(hass, aioclient_mock, ha_url):
-    mock_hub(aioclient_mock, registered=True)
+async def test_setup_fetches_state_even_if_webhook_is_unchanged(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock, changed=False)
     entry = await setup_entry(hass)
     assert entry.runtime_data.match == MATCH
 
 
-async def test_reregisters_after_module_restart(hass, aioclient_mock, ha_url):
-    mock_hub(aioclient_mock, registered=True)
-    await setup_entry(hass)
-    before = len(calls(aioclient_mock, "POST", routes("/webhook")))
-    aioclient_mock.clear_requests()
-    mock_hub(aioclient_mock, registered=False)
+async def poll(hass):
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done()
+
+
+async def test_reregisters_on_every_poll_without_refetching_unchanged_state(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock, changed=False)
+    await setup_entry(hass)
+    aioclient_mock.clear_requests()
+    mock_hub(aioclient_mock, changed=False)
+    await poll(hass)
     assert len(calls(aioclient_mock, "POST", routes("/webhook"))) == 1
-    assert before == 1
+    assert calls(aioclient_mock, "GET", routes("/state")) == []
+    assert calls(aioclient_mock, "GET", routes("/webhook")) == []
+
+
+async def test_refetches_state_when_the_registration_changed(hass, aioclient_mock, ha_url):
+    """The module restarted or someone re-pointed the webhook: our URL wins again."""
+    mock_hub(aioclient_mock, changed=False)
+    entry = await setup_entry(hass)
+    aioclient_mock.clear_requests()
+    newer = {**MATCH, "round": 7}
+    mock_hub(aioclient_mock, changed=True, state=newer)
+    await poll(hass)
+    posted = calls(aioclient_mock, "POST", routes("/webhook"))
+    assert posted[0][2] == {"url": f"{HA_URL}/api/webhook/{WEBHOOK_ID}"}
+    assert len(calls(aioclient_mock, "GET", routes("/state"))) == 1
+    assert entry.runtime_data.match == newer
 
 
 async def test_module_missing_creates_issue(hass, aioclient_mock, ha_url):
     aioclient_mock.post(f"{URL}/api/auth/login", json={"success": True})
     aioclient_mock.get(f"{URL}/api/status", json=STATUS)
     aioclient_mock.get(f"{URL}/api/modules", json=MODULES)
-    aioclient_mock.get(routes("/webhook"), status=404, json={})
+    aioclient_mock.post(routes("/webhook"), status=404, json={})
     aioclient_mock.delete(routes("/webhook"), status=404, json={})
     entry = await setup_entry(hass)
     assert entry.state is ConfigEntryState.LOADED

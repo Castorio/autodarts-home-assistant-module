@@ -32,9 +32,21 @@ describe('routes', () => {
   it('registers, reports and removes the webhook', async () => {
     const { handlers } = setup();
     expect(await handlers.webhookStatus(req('webhookStatus'))).toEqual({ statusCode: 200, body: { registered: false } });
-    expect(await handlers.registerWebhook(req('registerWebhook', { url: GOOD }))).toEqual({ statusCode: 200, body: { registered: true } });
+    expect(await handlers.registerWebhook(req('registerWebhook', { url: GOOD }))).toEqual({ statusCode: 200, body: { registered: true, changed: true } });
     expect(await handlers.webhookStatus(req('webhookStatus'))).toEqual({ statusCode: 200, body: { registered: true } });
     expect(await handlers.unregisterWebhook(req('unregisterWebhook'))).toEqual({ statusCode: 200, body: { registered: false } });
+  });
+
+  it('reports whether a registration changed the stored url, without revealing it', async () => {
+    const { handlers } = setup();
+    const other = 'http://ha:8123/api/webhook/zzzzzzzz01234567';
+    expect((await handlers.registerWebhook(req('registerWebhook', { url: GOOD }))).body).toEqual({ registered: true, changed: true });
+    expect((await handlers.registerWebhook(req('registerWebhook', { url: GOOD }))).body).toEqual({ registered: true, changed: false });
+    expect((await handlers.registerWebhook(req('registerWebhook', { url: other }))).body).toEqual({ registered: true, changed: true });
+    const status = await handlers.webhookStatus(req('webhookStatus'));
+    expect(JSON.stringify(status)).not.toContain('webhook/');
+    await handlers.unregisterWebhook(req('unregisterWebhook'));
+    expect((await handlers.registerWebhook(req('registerWebhook', { url: other }))).body).toEqual({ registered: true, changed: true });
   });
 
   it('rejects an invalid webhook with 400', async () => {

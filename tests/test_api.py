@@ -72,18 +72,31 @@ async def test_module_not_ready(hass, aioclient_mock):
 
 async def test_module_routes(hass, aioclient_mock):
     aioclient_mock.get(routes("/webhook"), json={"registered": True})
-    aioclient_mock.post(routes("/webhook"), json={"registered": True})
+    aioclient_mock.post(routes("/webhook"), json={"registered": True, "changed": False})
     aioclient_mock.delete(routes("/webhook"), json={"registered": False})
     aioclient_mock.get(routes("/state"), json=MATCH)
     aioclient_mock.post(routes("/intent"), json={"emitted": "homeassistant.trigger_2"})
     c = client(hass, None, None)
     assert await c.webhook_registered() is True
-    await c.register_webhook("http://ha/api/webhook/x")
+    assert await c.register_webhook("http://ha/api/webhook/x") is False
     await c.unregister_webhook()
     assert await c.get_match_state() == MATCH
     await c.trigger_intent(2, "party")
     assert aioclient_mock.mock_calls[1][2] == {"url": "http://ha/api/webhook/x"}
     assert aioclient_mock.mock_calls[4][2] == {"slot": 2, "data": "party"}
+
+
+@pytest.mark.parametrize(
+    ("body", "changed"),
+    [({"registered": True, "changed": True}, True), ({"registered": True}, True), (None, True)],
+)
+async def test_register_webhook_treats_unknown_change_as_changed(hass, aioclient_mock, body, changed):
+    """Older modules do not report "changed"; refetching state then is the safe choice."""
+    if body is None:
+        aioclient_mock.post(routes("/webhook"), status=204)
+    else:
+        aioclient_mock.post(routes("/webhook"), json=body)
+    assert await client(hass, None, None).register_webhook("http://ha/api/webhook/x") is changed
 
 
 async def test_module_route_sends_cookie_under_legacy_name_too(hass, aioclient_mock):
