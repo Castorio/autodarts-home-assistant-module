@@ -1,0 +1,481 @@
+[
+  {
+    "v": 1,
+    "type": "match_started",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "matchId": "m1"
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": null,
+      "mode": null,
+      "round": null,
+      "currentPlayer": null,
+      "players": [],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "state",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {},
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "throw",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [
+      "180",
+      "triple"
+    ],
+    "data": {
+      "segment": "T20",
+      "number": 20,
+      "multiplier": 3,
+      "points": 60,
+      "turnPoints": 180,
+      "busted": false
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": "T20",
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "turn_finished",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [
+      "high_finish"
+    ],
+    "data": {
+      "playerName": "Alice",
+      "playerIndex": 0,
+      "turnScore": 121,
+      "remaining": 0,
+      "busted": false,
+      "round": 7
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": "T20",
+      "lastTurnPoints": 121,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "player_changed",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "playerName": "Bob",
+      "playerIndex": 1,
+      "remaining": 301
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": "T20",
+      "lastTurnPoints": 121,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "leg_finished",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "winnerName": "Alice",
+      "winnerPlayerIndex": 0,
+      "leg": 1,
+      "set": 1
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": "T20",
+      "lastTurnPoints": 121,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "match_finished",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "winnerName": "Alice",
+      "winnerPlayerIndex": 0
+    },
+    "state": {
+      "active": true,
+      "matchId": "m1",
+      "variant": "X01",
+      "mode": "x01",
+      "round": 1,
+      "currentPlayer": {
+        "index": 0,
+        "name": "Alice",
+        "score": 501,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 501,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": "T20",
+      "lastTurnPoints": 121,
+      "winnerName": "Alice"
+    }
+  },
+  {
+    "v": 1,
+    "type": "match_closed",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "matchId": "m1"
+    },
+    "state": {
+      "active": false,
+      "matchId": null,
+      "variant": null,
+      "mode": null,
+      "round": null,
+      "currentPlayer": null,
+      "players": [],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "match_started",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "matchId": "m2"
+    },
+    "state": {
+      "active": true,
+      "matchId": "m2",
+      "variant": null,
+      "mode": null,
+      "round": null,
+      "currentPlayer": null,
+      "players": [],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "state",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {},
+    "state": {
+      "active": true,
+      "matchId": "m2",
+      "variant": "Cricket",
+      "mode": "cricket",
+      "round": 2,
+      "currentPlayer": {
+        "index": 1,
+        "name": "Bob",
+        "score": 0,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 0,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 0,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "state",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {},
+    "state": {
+      "active": true,
+      "matchId": "m2",
+      "variant": "Cricket",
+      "mode": "cricket",
+      "round": 2,
+      "currentPlayer": {
+        "index": 1,
+        "name": "Bob",
+        "score": 15,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 40,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 15,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "cricket_closed",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "field": 20,
+      "playerName": "Bob",
+      "playerIndex": 1
+    },
+    "state": {
+      "active": true,
+      "matchId": "m2",
+      "variant": "Cricket",
+      "mode": "cricket",
+      "round": 2,
+      "currentPlayer": {
+        "index": 1,
+        "name": "Bob",
+        "score": 15,
+        "legsWon": 0,
+        "setsWon": 0
+      },
+      "players": [
+        {
+          "index": 0,
+          "name": "Alice",
+          "score": 40,
+          "legsWon": 0,
+          "setsWon": 0
+        },
+        {
+          "index": 1,
+          "name": "Bob",
+          "score": 15,
+          "legsWon": 0,
+          "setsWon": 0
+        }
+      ],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  },
+  {
+    "v": 1,
+    "type": "match_cancelled",
+    "ts": "2026-10-19T12:00:00.000Z",
+    "tags": [],
+    "data": {
+      "matchId": "m2"
+    },
+    "state": {
+      "active": false,
+      "matchId": null,
+      "variant": null,
+      "mode": null,
+      "round": null,
+      "currentPlayer": null,
+      "players": [],
+      "lastThrow": null,
+      "lastTurnPoints": null,
+      "winnerName": null
+    }
+  }
+]
