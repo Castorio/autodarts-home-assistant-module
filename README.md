@@ -12,8 +12,9 @@ Two parts in this repository:
   "IO-Darts Board" device with sensors for the board, the hub and the current match, plus buttons,
   switches, device triggers and an event for automations.
 
-Status: both parts are implemented and tested, developed on a feature branch. Neither is published
-to a module registry or the HACS default store yet — install manually as described below.
+Status: both parts are implemented and tested. The hub module is available in the IO-Darts-Agent
+module store; the integration is installed via HACS as a custom repository (it is not in the HACS
+default store yet) — see the installation instructions below.
 
 ## Installation
 
@@ -21,7 +22,11 @@ Step-by-step guide with screenshots: [English](docs/en/setup.md) | [Deutsch](doc
 
 ### Hub module (`homeassistant`)
 
-Install it on the hub directly from this repository:
+Install it from the IO-Darts-Agent module store:
+
+- Hub UI → Modules → Store → "Home Assistant" → Install, then start it from the hub UI.
+
+Alternatively, install directly from this repository:
 
 - Hub UI → Modules → "Install from Git" → URL `https://github.com/Castorio/autodarts-home-assistant-module.git`
 
