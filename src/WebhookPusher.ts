@@ -15,15 +15,17 @@ export class WebhookPusher {
   private readonly fetchFn: typeof fetch;
   private readonly timeoutMs: number;
   private readonly now: () => number;
+  private readonly warn: (message: string, context?: Record<string, unknown>) => void;
   private lastWarn = -Infinity;
 
   constructor(
     private readonly getUrl: () => string | null,
-    private readonly options: PusherOptions,
+    options: PusherOptions,
   ) {
     this.fetchFn = options.fetchFn ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 3000;
     this.now = options.now ?? Date.now;
+    this.warn = options.warn;
   }
 
   async push(payload: PushPayload): Promise<boolean> {
@@ -37,18 +39,19 @@ export class WebhookPusher {
         redirect: 'manual',
         signal: AbortSignal.timeout(this.timeoutMs),
       });
+      await res.body?.cancel().catch(() => undefined);
       if (res.ok) return true;
-      this.warn(url, `HTTP ${res.status}`);
+      this.logWarn(url, `HTTP ${res.status}`);
     } catch (err) {
-      this.warn(url, err instanceof Error ? err.message : String(err));
+      this.logWarn(url, err instanceof Error ? err.message : String(err));
     }
     return false;
   }
 
-  private warn(url: string, reason: string): void {
+  private logWarn(url: string, reason: string): void {
     const t = this.now();
     if (t - this.lastWarn < WARN_INTERVAL_MS) return;
     this.lastWarn = t;
-    this.options.warn('Home Assistant webhook push failed', { url: maskWebhookUrl(url), reason });
+    this.warn('Home Assistant webhook push failed', { url: maskWebhookUrl(url), reason });
   }
 }

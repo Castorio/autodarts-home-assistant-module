@@ -48,4 +48,21 @@ describe('WebhookPusher', () => {
     await p.push(payload);
     expect(warn).toHaveBeenCalledTimes(2);
   });
+
+  it('cancels response body on success to release connection pool', async () => {
+    const cancel = vi.fn().mockResolvedValue(undefined);
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, status: 200, body: { cancel } });
+    const p = new WebhookPusher(() => URL_, { warn: vi.fn(), fetchFn });
+    expect(await p.push(payload)).toBe(true);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it('cancels response body on non-2xx to release connection pool', async () => {
+    const cancel = vi.fn().mockResolvedValue(undefined);
+    const warn = vi.fn();
+    const fetchFn = vi.fn().mockResolvedValue({ ok: false, status: 404, body: { cancel } });
+    const p = new WebhookPusher(() => URL_, { warn, fetchFn });
+    expect(await p.push(payload)).toBe(false);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
 });
