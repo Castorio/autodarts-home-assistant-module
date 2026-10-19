@@ -99,3 +99,35 @@ async def test_push_with_invalid_color_is_rejected(hass, aioclient_mock, hass_cl
     client = await hass_client_no_auth()
     resp = await client.post(f"/api/webhook/{WEBHOOK_ID}", json=push(state={**MATCH, "currentPlayerColor": "red"}))
     assert resp.status == 400
+
+
+async def test_push_with_trailing_newline_color_is_rejected(hass, aioclient_mock, hass_client_no_auth):
+    await setup(hass, aioclient_mock)
+    client = await hass_client_no_auth()
+    resp = await client.post(
+        f"/api/webhook/{WEBHOOK_ID}", json=push(state={**MATCH, "currentPlayerColor": "#ef4444\n"})
+    )
+    assert resp.status == 400
+
+
+async def test_push_with_invalid_event_data_color_is_rejected(hass, aioclient_mock, hass_client_no_auth):
+    await setup(hass, aioclient_mock)
+    client = await hass_client_no_auth()
+    resp = await client.post(
+        f"/api/webhook/{WEBHOOK_ID}",
+        json=push(type_="player_changed", data={"playerName": "Bob", "playerColor": "red"}),
+    )
+    assert resp.status == 400
+
+
+async def test_push_with_valid_event_data_color_is_accepted(hass, aioclient_mock, hass_client_no_auth):
+    await setup(hass, aioclient_mock)
+    client = await hass_client_no_auth()
+    resp = await client.post(
+        f"/api/webhook/{WEBHOOK_ID}",
+        json=push(
+            type_="player_changed",
+            data={"playerName": "Bob", "playerColor": "#ef4444", "nextPlayerColor": None},
+        ),
+    )
+    assert resp.status == 200

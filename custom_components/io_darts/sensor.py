@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -21,6 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import IoDartsConfigEntry
 from .coordinator import IoDartsCoordinator
 from .entity import IoDartsEntity
+from .schema import HEX_COLOR
 
 
 def _current(c: IoDartsCoordinator) -> dict[str, Any]:
@@ -100,9 +100,6 @@ class IoDartsSensor(IoDartsEntity, SensorEntity):
         return self.entity_description.attrs_fn(self.coordinator)
 
 
-HEX_COLOR = re.compile(r"^#[0-9a-f]{6}$")
-
-
 def _rgb(value: str) -> list[int]:
     return [int(value[i : i + 2], 16) for i in (1, 3, 5)]
 
@@ -123,14 +120,14 @@ class PlayerColorSensor(IoDartsEntity, RestoreSensor):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         last = await self.async_get_last_sensor_data()
-        if last is not None and isinstance(last.native_value, str) and HEX_COLOR.match(last.native_value):
+        if last is not None and isinstance(last.native_value, str) and HEX_COLOR.fullmatch(last.native_value):
             self._attr_native_value = last.native_value
         self._take_color()
 
     def _take_color(self) -> None:
         match = self.coordinator.match
         value = match.get(self._field)
-        if match.get("active") and isinstance(value, str) and HEX_COLOR.match(value):
+        if match.get("active") and isinstance(value, str) and HEX_COLOR.fullmatch(value):
             self._attr_native_value = value
 
     @callback
