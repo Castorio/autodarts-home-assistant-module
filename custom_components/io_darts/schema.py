@@ -15,6 +15,9 @@ MAX_PLAYERS = 16
 _SCALAR = vol.Any(None, bool, int, float, vol.All(str, vol.Length(max=MAX_STRING)))
 _OPT_STR = vol.Any(None, vol.All(str, vol.Length(max=MAX_STRING)))
 _OPT_NUM = vol.Any(None, int, float)
+# Color fields are optional with a default of None so that payloads from older hub
+# module versions (which don't send them yet) still validate.
+_OPT_COLOR = vol.Any(None, vol.All(str, vol.Match(r"^#[0-9a-f]{6}$")))
 
 PLAYER_SCHEMA = vol.Schema(
     {
@@ -23,6 +26,7 @@ PLAYER_SCHEMA = vol.Schema(
         vol.Required("score"): _OPT_NUM,
         vol.Required("legsWon"): int,
         vol.Required("setsWon"): int,
+        vol.Optional("color", default=None): _OPT_COLOR,
     },
     extra=vol.REMOVE_EXTRA,
 )
@@ -39,6 +43,8 @@ STATE_SCHEMA = vol.Schema(
         vol.Required("lastThrow"): _OPT_STR,
         vol.Required("lastTurnPoints"): _OPT_NUM,
         vol.Required("winnerName"): _OPT_STR,
+        vol.Optional("currentPlayerColor", default=None): _OPT_COLOR,
+        vol.Optional("nextPlayerColor", default=None): _OPT_COLOR,
     },
     extra=vol.REMOVE_EXTRA,
 )

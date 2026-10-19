@@ -37,7 +37,9 @@
       "round": { "name": "Runde" },
       "hub_version": { "name": "Hub-Version" },
       "hub_started": { "name": "Hub gestartet" },
-      "running_modules": { "name": "Laufende Module" }
+      "running_modules": { "name": "Laufende Module" },
+      "current_player_color": { "name": "Aktuelle Spielerfarbe" },
+      "next_player_color": { "name": "Nächste Spielerfarbe" }
     },
     "button": {
       "autodarts_connect": { "name": "Autodarts verbinden" },

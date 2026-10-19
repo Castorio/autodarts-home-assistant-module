@@ -30,6 +30,8 @@ EMPTY_MATCH: dict[str, Any] = {
     "lastThrow": None,
     "lastTurnPoints": None,
     "winnerName": None,
+    "currentPlayerColor": None,
+    "nextPlayerColor": None,
 }
 
 

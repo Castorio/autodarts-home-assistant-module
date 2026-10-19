@@ -18,8 +18,8 @@ MODULES = [
     {"id": "homeassistant", "name": "Home Assistant", "version": "0.1.0", "description": "", "status": "running", "events": []},
 ]
 
-PLAYER_ALICE = {"index": 0, "name": "Alice", "score": 301, "legsWon": 1, "setsWon": 0}
-PLAYER_BOB = {"index": 1, "name": "Bob", "score": 241, "legsWon": 0, "setsWon": 0}
+PLAYER_ALICE = {"index": 0, "name": "Alice", "score": 301, "legsWon": 1, "setsWon": 0, "color": "#3b82f6"}
+PLAYER_BOB = {"index": 1, "name": "Bob", "score": 241, "legsWon": 0, "setsWon": 0, "color": "#ef4444"}
 
 MATCH = {
     "active": True,
@@ -32,6 +32,8 @@ MATCH = {
     "lastThrow": "T20",
     "lastTurnPoints": 100,
     "winnerName": None,
+    "currentPlayerColor": "#ef4444",
+    "nextPlayerColor": "#3b82f6",
 }
 
 

@@ -72,6 +72,8 @@ Device: **IO-Darts Board**. Entity IDs below follow the device name, e.g.
 | hub_version     | IO-Darts-Agent version (diagnostic).                                              |
 | hub_started     | Time the hub was started (timestamp, to the minute; diagnostic).                  |
 | running_modules | Number of hub modules currently running (diagnostic).                            |
+| current_player_color | Hex color (`#rrggbb`) of the current player. Attribute `rgb_color`: `[r, g, b]` list for use in `light.turn_on`. Keeps the last known color after the match ends. |
+| next_player_color    | Hex color (`#rrggbb`) of the next player. Same `rgb_color` attribute and persistence as above. |
 
 ### Binary sensors
 
@@ -106,7 +108,7 @@ Every push except plain state updates fires `io_darts_event` on the Home Assista
 
 | type                 | Fields                                                            |
 | -------------------- | ------------------------------------------------------------------ |
-| player_changed       | playerName, playerIndex, remaining                                |
+| player_changed       | playerName, playerIndex, remaining, playerColor, nextPlayerColor  |
 | throw                | segment, number, multiplier, points, turnPoints, busted            |
 | turn_finished        | playerName, playerIndex, turnScore, remaining, busted, round        |
 | leg_finished         | winnerName, winnerPlayerIndex, leg, set                             |
@@ -191,6 +193,21 @@ actions:
   - action: io_darts.trigger_intent
     data:
       slot: 1
+```
+
+Dart light follows the current player:
+
+```yaml
+alias: Dart light follows the current player
+triggers:
+  - trigger: state
+    entity_id: sensor.io_darts_board_current_player_color
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.dart_light
+    data:
+      rgb_color: "{{ state_attr('sensor.io_darts_board_current_player_color', 'rgb_color') }}"
 ```
 
 ## Security

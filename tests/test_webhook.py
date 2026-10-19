@@ -82,3 +82,20 @@ async def test_invalid_payloads_are_rejected(hass, aioclient_mock, hass_client_n
     await hass.async_block_till_done()
     assert events == []
     assert entry.runtime_data.match["active"] is False
+
+
+async def test_push_without_colors_from_older_module(hass, aioclient_mock, hass_client_no_auth):
+    await setup(hass, aioclient_mock)
+    client = await hass_client_no_auth()
+    old_player = {"index": 0, "name": "Alice", "score": 301, "legsWon": 0, "setsWon": 0}
+    old_state = {k: v for k, v in MATCH.items() if k not in ("currentPlayerColor", "nextPlayerColor")}
+    old_state = {**old_state, "players": [old_player], "currentPlayer": old_player}
+    resp = await client.post(f"/api/webhook/{WEBHOOK_ID}", json=push(state=old_state))
+    assert resp.status == 200
+
+
+async def test_push_with_invalid_color_is_rejected(hass, aioclient_mock, hass_client_no_auth):
+    await setup(hass, aioclient_mock)
+    client = await hass_client_no_auth()
+    resp = await client.post(f"/api/webhook/{WEBHOOK_ID}", json=push(state={**MATCH, "currentPlayerColor": "red"}))
+    assert resp.status == 400

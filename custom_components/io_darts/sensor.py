@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -81,7 +83,14 @@ SENSORS = (
 async def async_setup_entry(
     hass: HomeAssistant, entry: IoDartsConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities(IoDartsSensor(entry.runtime_data, d) for d in SENSORS)
+    coordinator = entry.runtime_data
+    async_add_entities(
+        [
+            *(IoDartsSensor(coordinator, d) for d in SENSORS),
+            PlayerColorSensor(coordinator, "current_player_color", "currentPlayerColor"),
+            PlayerColorSensor(coordinator, "next_player_color", "nextPlayerColor"),
+        ]
+    )
 
 
 class IoDartsSensor(IoDartsEntity, SensorEntity):
@@ -100,3 +109,47 @@ class IoDartsSensor(IoDartsEntity, SensorEntity):
         if self.entity_description.attrs_fn is None:
             return None
         return self.entity_description.attrs_fn(self.coordinator)
+
+
+HEX_COLOR = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _rgb(value: str) -> list[int]:
+    return [int(value[i : i + 2], 16) for i in (1, 3, 5)]
+
+
+class PlayerColorSensor(IoDartsEntity, RestoreSensor):
+    """Color of the current or next player; keeps the last color outside a match."""
+
+    def __init__(self, coordinator: IoDartsCoordinator, key: str, field: str) -> None:
+        super().__init__(coordinator, key)
+        self._field = field
+        self._attr_native_value: str | None = None
+
+    @property
+    def available(self) -> bool:
+        """Always available, so lights keep their color while the hub is away."""
+        return True
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_sensor_data()
+        if last is not None and isinstance(last.native_value, str) and HEX_COLOR.match(last.native_value):
+            self._attr_native_value = last.native_value
+        self._take_color()
+
+    def _take_color(self) -> None:
+        match = self.coordinator.match
+        value = match.get(self._field)
+        if match.get("active") and isinstance(value, str) and HEX_COLOR.match(value):
+            self._attr_native_value = value
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._take_color()
+        super()._handle_coordinator_update()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        value = self._attr_native_value
+        return {"rgb_color": _rgb(value)} if isinstance(value, str) else None
