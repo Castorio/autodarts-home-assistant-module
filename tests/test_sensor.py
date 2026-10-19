@@ -72,6 +72,38 @@ async def test_hub_started_unknown_without_uptime(hass, aioclient_mock):
     assert hass.states.get("sensor.io_darts_board_hub_started").state == "unknown"
 
 
+async def test_hub_started_ignores_minute_boundary_jitter_but_detects_restart(hass, aioclient_mock, freezer):
+    # First poll: raw start time is 11:00:59, truncated down to 11:00:00.
+    freezer.move_to("2026-10-19T12:00:59+00:00")
+    await setup(hass, aioclient_mock)
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T11:00:00+00:00"
+
+    # Second poll, 31 seconds later: the hub's reported uptime (3629) is a couple of
+    # seconds short of the "perfect" continuation (3631) -- ordinary latency jitter. That
+    # alone nudges the raw start time just past the next minute boundary (11:01:01), which
+    # would flip the truncated value a whole minute forward even though the hub did not
+    # restart. It must stay at 11:00:00.
+    freezer.tick(timedelta(seconds=31))
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{URL}/api/status", json={**STATUS, "uptime": 3629})
+    aioclient_mock.get(f"{URL}/api/modules", json=MODULES)
+    aioclient_mock.post(routes("/webhook"), json={"registered": True, "changed": False})
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T11:00:00+00:00"
+
+    # Third poll, much later: a much smaller uptime means the hub actually restarted, so
+    # the new start time (far more than 90s away from the previous one) must be taken.
+    freezer.tick(timedelta(minutes=5))
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{URL}/api/status", json={**STATUS, "uptime": 10})
+    aioclient_mock.get(f"{URL}/api/modules", json=MODULES)
+    aioclient_mock.post(routes("/webhook"), json={"registered": True, "changed": False})
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T12:06:00+00:00"
+
+
 async def test_hub_started_does_not_move_on_pushes(hass, aioclient_mock, hass_client_no_auth, freezer):
     freezer.move_to("2026-10-19T12:00:59+00:00")
     await setup(hass, aioclient_mock)

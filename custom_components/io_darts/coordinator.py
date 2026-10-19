@@ -46,6 +46,11 @@ class HubData:
     hub_started: datetime | None = None
 
 
+#: Below this, two computed start times are treated as the same restart (latency jitter
+#: around a minute boundary); at or above it, the hub is assumed to have restarted.
+RESTART_THRESHOLD = timedelta(seconds=90)
+
+
 def _started_at(status: dict[str, Any]) -> datetime | None:
     """Start time of the hub (now - uptime), truncated to the minute so it stays stable between polls."""
     uptime = status.get("uptime")
@@ -75,7 +80,20 @@ class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except HubConnectionError as err:
             raise UpdateFailed(str(err)) from err
-        return HubData(status=status, modules=modules, hub_started=_started_at(status))
+        return HubData(status=status, modules=modules, hub_started=self._resolve_hub_started(_started_at(status)))
+
+    def _resolve_hub_started(self, new_started: datetime | None) -> datetime | None:
+        """Keep the previous start time across small jitter; only move on an actual restart.
+
+        `_started_at` truncates to the minute, so an unrelated second or two of latency
+        between polls can push the raw value across a minute boundary and flip the
+        truncated timestamp even though the hub kept running. Only treat it as a restart
+        (and take the new value) once the two differ by RESTART_THRESHOLD or more.
+        """
+        previous = self.data.hub_started if self.data else None
+        if previous is not None and new_started is not None and abs(new_started - previous) < RESTART_THRESHOLD:
+            return previous
+        return new_started
 
     async def _sync_module(self) -> None:
         """Re-register our webhook on every poll; reload state when the module's URL changed.
