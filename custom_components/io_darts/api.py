@@ -82,7 +82,14 @@ class HubClient:
         text: str | None = None
         try:
             async with self._session.request(
-                method, f"{self._url}{path}", json=json, headers=headers, timeout=self._timeout
+                method,
+                f"{self._url}{path}",
+                json=json,
+                headers=headers,
+                timeout=self._timeout,
+                # Without a body aiohttp would send application/octet-stream,
+                # which the hub (Fastify) rejects with 415
+                skip_auto_headers=("Content-Type",) if json is None else None,
             ) as resp:
                 if resp.status == 401 and retry and self._username:
                     # Note the retry; the actual login + retry happens after this

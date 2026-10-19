@@ -137,3 +137,29 @@ async def test_get_status_rejects_wrong_type(hass, aioclient_mock):
     aioclient_mock.get(f"{URL}/api/status", json=["not", "a", "dict"])
     with pytest.raises(HubConnectionError):
         await client(hass, None, None).get_status()
+
+
+async def test_bodyless_post_is_accepted_by_a_strict_hub(socket_enabled):
+    """The hub (Fastify) answers 415 to an empty body sent as application/octet-stream."""
+    from aiohttp import web
+    from aiohttp.test_utils import TestServer
+
+    seen: list[str | None] = []
+
+    async def handler(request: web.Request) -> web.Response:
+        content_type = request.headers.get("Content-Type")
+        seen.append(content_type)
+        if content_type not in (None, "application/json"):
+            return web.json_response({"error": "Unsupported Media Type"}, status=415)
+        return web.json_response({"success": True})
+
+    app = web.Application()
+    app.router.add_post("/api/modules/{module}/{action}", handler)
+    app.router.add_post("/api/autodarts/{action}", handler)
+    app.router.add_post("/api/settings/restart", handler)
+    async with TestServer(app, host="127.0.0.1") as server, aiohttp.ClientSession() as session:
+        c = HubClient(session, str(server.make_url("")))
+        await c.module_action("wled", "start")
+        await c.autodarts("connect")
+        await c.restart_hub()
+    assert seen == [None, None, None]
