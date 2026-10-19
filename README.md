@@ -67,10 +67,10 @@ Device: **IO-Darts Board**. Entity IDs below follow the device name, e.g.
 | current_score   | Remaining score of the current player.                                            |
 | last_throw      | Last recorded throw, e.g. `T20`.                                                   |
 | last_turn       | Points scored in the last finished turn.                                          |
-| game_variant    | Match variant: `x01`, `cricket`, `tactics` or `other`.                            |
+| game_variant    | Variant name as reported by the hub, e.g. `X01` or `Cricket`.                     |
 | round           | Current round number.                                                             |
 | hub_version     | IO-Darts-Agent version (diagnostic).                                              |
-| hub_uptime      | Hub uptime in seconds (diagnostic).                                               |
+| hub_started     | Time the hub was started (timestamp, to the minute; diagnostic).                  |
 | running_modules | Number of hub modules currently running (diagnostic).                            |
 
 ### Binary sensors
@@ -135,7 +135,7 @@ select "IO-Darts Board"):
 
 ## Intents
 
-Service `io_darts.trigger_intent`:
+Action `io_darts.trigger_intent`:
 
 | Field           | Description                                        |
 | --------------- | --------------------------------------------------- |
@@ -154,13 +154,13 @@ Announce the next player, using the `playerName` from a `player_changed` event:
 ```yaml
 automation:
   - alias: "Darts: announce next player"
-    trigger:
-      - platform: event
+    triggers:
+      - trigger: event
         event_type: io_darts_event
         event_data:
           type: player_changed
-    action:
-      - service: tts.cloud_say # replace with your TTS service and target
+    actions:
+      - action: tts.cloud_say # replace with your TTS service and target
         data:
           message: "It's {{ trigger.event.data.playerName }}'s turn"
 ```
@@ -171,13 +171,13 @@ IO-Darts Board device id from Settings → Devices & Services):
 ```yaml
 automation:
   - alias: "Darts: 180 flash"
-    trigger:
-      - platform: device
+    triggers:
+      - trigger: device
         domain: io_darts
         device_id: <io_darts_board_device_id>
         type: throw_180
-    action:
-      - service: light.turn_on
+    actions:
+      - action: light.turn_on
         target:
           entity_id: light.living_room
         data:
@@ -187,8 +187,8 @@ automation:
 Trigger a hub intent from Home Assistant, e.g. from a script or another automation:
 
 ```yaml
-action:
-  - service: io_darts.trigger_intent
+actions:
+  - action: io_darts.trigger_intent
     data:
       slot: 1
 ```
