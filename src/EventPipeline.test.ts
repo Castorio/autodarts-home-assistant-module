@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventPipeline, MAX_PENDING } from './EventPipeline.js';
 import { MatchTracker } from './MatchTracker.js';
+import type { PushPayload } from './types.js';
 
 const now = () => new Date('2026-10-19T12:00:00.000Z');
 const state = (round: number) => ({
@@ -78,26 +79,91 @@ describe('EventPipeline', () => {
     expect(order).toEqual(['state', 'throw']);
   });
 
-  it('drops events beyond the pending limit instead of buffering them unboundedly', async () => {
+  it('drops pushes beyond the pending limit instead of buffering them unboundedly', async () => {
     const push = vi.fn().mockImplementation(() => new Promise<void>(() => {
       // never resolves: simulates an unreachable Home Assistant webhook
     }));
     const p = new EventPipeline(new MatchTracker(), push, now);
-
-    const pending: Promise<void>[] = [];
-    for (let i = 0; i < MAX_PENDING + 1; i++) {
-      pending.push(p.handle({ type: 'throw.detected', data: { segment: { name: 'S20', number: 20, multiplier: 1 }, points: 20 } }));
-    }
-    // The (MAX_PENDING + 2)th call (the 22nd overall) must be dropped and
-    // resolve immediately, instead of queueing behind the stuck backlog.
-    const overflow = p.handle({ type: 'throw.detected', data: { segment: { name: 'S20', number: 20, multiplier: 1 }, points: 20 } });
+    for (let i = 0; i < MAX_PENDING + 5; i++) void p.handle(throwEvent(`S${i}`));
+    // Only the head of the queue is running; the rest wait behind it
+    await flush();
+    expect(push).toHaveBeenCalledTimes(1);
+    const overflow = p.handle(throwEvent('S1'));
     await expect(overflow).resolves.toBeUndefined();
+  });
 
-    // Only the head of the queue actually ran (push never resolves, so the
-    // rest stay queued); the point is that the backlog did not grow further.
-    const callsAfterOverflow = push.mock.calls.length;
-    const overflow2 = p.handle({ type: 'throw.detected', data: { segment: { name: 'S20', number: 20, multiplier: 1 }, points: 20 } });
-    await expect(overflow2).resolves.toBeUndefined();
-    expect(push.mock.calls.length).toBe(callsAfterOverflow);
+  it('keeps exactly MAX_PENDING pushes pending and still applies the state of dropped ones', async () => {
+    const held = heldPush();
+    const tracker = new MatchTracker();
+    const p = new EventPipeline(tracker, held.push, now);
+    for (let i = 0; i < MAX_PENDING; i++) void p.handle(throwEvent(`S${i}`));
+    // The (MAX_PENDING + 1)th push is dropped, but its throw still updates the match state
+    let dropped = false;
+    void p.handle(throwEvent('T20')).then(() => {
+      dropped = true;
+    });
+    await flush();
+    expect(dropped).toBe(true);
+    expect(tracker.snapshot().lastThrow).toBe('T20');
+
+    await held.releaseAll();
+    expect(held.sent.map((x) => x.data.segment)).toEqual(Array.from({ length: MAX_PENDING }, (_, i) => `S${i}`));
+
+    void p.handle({ type: 'turn.finished', data: { turnScore: 60, remaining: 441, busted: false } });
+    await held.releaseAll();
+    const last = held.sent[held.sent.length - 1];
+    expect(last.type).toBe('turn_finished');
+    expect(last.state.lastThrow).toBe('T20');
+  });
+
+  it('applies the tracker synchronously, before earlier pushes settle', () => {
+    const held = heldPush();
+    const tracker = new MatchTracker();
+    const p = new EventPipeline(tracker, held.push, now);
+    void p.handle(throwEvent('S1'));
+    void p.handle(throwEvent('D16'));
+    expect(tracker.snapshot().lastThrow).toBe('D16');
+  });
+
+  it('pushes each event with the state as of that event, in order', async () => {
+    const held = heldPush();
+    const p = new EventPipeline(new MatchTracker(), held.push, now);
+    void p.handle(throwEvent('S1'));
+    void p.handle(throwEvent('D16'));
+    void p.handle(throwEvent('T20'));
+    await held.releaseAll();
+    expect(held.sent.map((x) => [x.data.segment, x.state.lastThrow])).toEqual([
+      ['S1', 'S1'],
+      ['D16', 'D16'],
+      ['T20', 'T20'],
+    ]);
   });
 });
+
+function throwEvent(name: string) {
+  return { type: 'throw.detected', data: { segment: { name, number: 20, multiplier: 1 }, points: 20 } };
+}
+
+async function flush() {
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+}
+
+/** A push whose calls stay pending until released; records payloads in call order */
+function heldPush() {
+  const sent: PushPayload[] = [];
+  const waiting: (() => void)[] = [];
+  const push = vi.fn().mockImplementation((payload: PushPayload) => {
+    sent.push(payload);
+    return new Promise<void>((resolve) => waiting.push(resolve));
+  });
+  async function releaseAll() {
+    // Each release lets the next queued push start, so keep going until idle
+    for (let rounds = 0; rounds < 1000; rounds++) {
+      await flush();
+      const next = waiting.shift();
+      if (!next) return;
+      next();
+    }
+  }
+  return { push, sent, releaseAll };
+}
