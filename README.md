@@ -211,6 +211,168 @@ actions:
       rgb_color: "{{ trigger.to_state.attributes.rgb_color }}"
 ```
 
+### Room lights follow the player color and are restored after the match
+
+A complete setup that is in daily use: a light group takes the color of the player whose turn it
+is, and after the match is won or cancelled every lamp goes back to the state it had before the
+match (on/off, brightness, color temperature or color). The state before the match is stored in a
+text helper, so it survives a Home Assistant restart during a match.
+
+Entity IDs follow the language of your Home Assistant. The examples use the English IDs; in a
+German instance they are, for example, `sensor.io_darts_board_aktuelle_spielerfarbe` and
+`binary_sensor.io_darts_board_match_aktiv`. Check the IDs on the IO-Darts Board device page.
+
+1. Create a light group (Settings → Devices & Services → Helpers → Group → Light group), e.g.
+   `light.garage_lights`. Its members must support color.
+2. Create a text helper (Helpers → Text) named "Autodarts lights before match" with
+   maximum length 255. Its entity ID is `input_text.autodarts_lights_before_match`. It stays
+   empty outside a match; if a match is ever left without an end event, clear it by hand.
+3. Create the automation (Automation editor → Edit in YAML):
+
+```yaml
+alias: "Autodarts: lights follow the player color"
+description: >-
+  Saves the state of the light group at match start in a text helper, sets the color of the
+  player whose turn it is during the match and restores the saved state when the match is won
+  or cancelled.
+mode: queued
+triggers:
+  - trigger: event
+    event_type: io_darts_event
+    event_data:
+      type: match_started
+    id: start
+  - trigger: state
+    entity_id: binary_sensor.io_darts_board_match_active
+    from: "off"
+    to: "on"
+    id: start
+  - trigger: state
+    entity_id: sensor.io_darts_board_current_player_color
+    not_from: ["unknown", "unavailable"]
+    not_to: ["unknown", "unavailable"]
+    id: color
+  - trigger: event
+    event_type: io_darts_event
+    event_data:
+      type: match_finished
+    id: end
+  - trigger: event
+    event_type: io_darts_event
+    event_data:
+      type: match_cancelled
+    id: end
+  - trigger: state
+    entity_id: binary_sensor.io_darts_board_match_active
+    from: "on"
+    to: "off"
+    id: end
+actions:
+  - choose:
+      - alias: "Match start: save the lights, set the player color"
+        conditions:
+          - condition: trigger
+            id: start
+        sequence:
+          - if:
+              - condition: state
+                entity_id: input_text.autodarts_lights_before_match
+                state: ["", "unknown"]
+            then:
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.autodarts_lights_before_match
+                data:
+                  value: >-
+                    {%- set ns = namespace(out={}) -%}
+                    {%- for e in state_attr('light.garage_lights', 'entity_id') or [] -%}
+                    {%- set a = states[e].attributes if states[e] is not none else {} -%}
+                    {%- set d = dict(brightness=a.brightness) if a.brightness is number else {} -%}
+                    {%- if a.color_mode == 'color_temp' and a.color_temp_kelvin is number -%}
+                    {%- set d = dict(d, color_temp_kelvin=a.color_temp_kelvin) -%}
+                    {%- elif a.hs_color -%}
+                    {%- set d = dict(d, hs_color=[a.hs_color[0] | round(1), a.hs_color[1] | round(1)]) -%}
+                    {%- endif -%}
+                    {%- set ns.out = dict(ns.out, **{e: dict(on=is_state(e, 'on'), d=d)}) -%}
+                    {%- endfor -%}
+                    {{ ns.out | to_json }}
+          - if:
+              - condition: state
+                entity_id: binary_sensor.io_darts_board_match_active
+                state: "on"
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: sensor.io_darts_board_current_player_color
+                    state: ["unknown", "unavailable"]
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: light.garage_lights
+                data:
+                  rgb_color: "{{ state_attr('sensor.io_darts_board_current_player_color', 'rgb_color') }}"
+      - alias: "Player change: set the color"
+        conditions:
+          - condition: trigger
+            id: color
+          - condition: state
+            entity_id: binary_sensor.io_darts_board_match_active
+            state: "on"
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.garage_lights
+            data:
+              rgb_color: "{{ state_attr('sensor.io_darts_board_current_player_color', 'rgb_color') }}"
+      - alias: "Match won or cancelled: restore the lights"
+        conditions:
+          - condition: trigger
+            id: end
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: input_text.autodarts_lights_before_match
+                state: ["", "unknown", "unavailable"]
+        sequence:
+          - repeat:
+              for_each: "{{ (states('input_text.autodarts_lights_before_match') | from_json({})).items() | list }}"
+              sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ repeat.item[1].on }}"
+                  then:
+                    - action: light.turn_on
+                      target:
+                        entity_id: "{{ repeat.item[0] }}"
+                      data: "{{ repeat.item[1].d }}"
+                      continue_on_error: true
+                  else:
+                    - action: light.turn_off
+                      target:
+                        entity_id: "{{ repeat.item[0] }}"
+                      continue_on_error: true
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.autodarts_lights_before_match
+            data:
+              value: ""
+```
+
+How it behaves:
+
+- The state is saved only while the helper is empty, so a restart or a second start trigger during
+  a match never overwrites it with the player color.
+- Both the `match_started` event and "Match active" turning on start the match, so the color is
+  also set when the first player has the same color as at the end of the previous match.
+- The lights are restored as soon as the match is won (`match_finished`), not only when the
+  results screen is closed.
+- The lamps are read from the group at match start, so adding a lamp to the group needs no change
+  here. The JSON for two lamps is about 180 characters; with many lamps the 255 character limit of
+  a text helper is reached, then split the group across two automations and helpers.
+
+A simpler variant without saving the state is the "Dart light follows the current player" example
+above.
+
 ## Security
 
 - The webhook the integration registers is `local_only`: Home Assistant rejects pushes that arrive
