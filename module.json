@@ -1,0 +1,45 @@
+{
+  "id": "homeassistant",
+  "name": "Home Assistant",
+  "version": "0.1.0",
+  "description": "Makes the Autodarts board a Home Assistant device: pushes match events to the io_darts integration and lets Home Assistant trigger intents.",
+  "author": "castor.io / Christoph Castor",
+  "entry": "dist/main.js",
+  "events": [
+    "match.start", "match.state", "match.delete", "match.finish", "match.finished",
+    "throw.detected", "turn.finished", "player.change", "game.finished",
+    "cricket.state", "cricket.closed"
+  ],
+  "config": {
+    "allowedHosts": {
+      "type": "string",
+      "label": "Allowed Home Assistant hosts",
+      "description": "Optional, comma separated host names or IPs the webhook may point to (empty = any)",
+      "required": false,
+      "default": ""
+    }
+  },
+  "intents": {
+    "emits": [
+      { "id": "homeassistant.trigger_1", "description": "Triggered from Home Assistant (slot 1)", "category": "homeassistant", "payload": { "slot": { "type": "number" }, "data": { "type": "string", "optional": true } } },
+      { "id": "homeassistant.trigger_2", "description": "Triggered from Home Assistant (slot 2)", "category": "homeassistant", "payload": { "slot": { "type": "number" }, "data": { "type": "string", "optional": true } } },
+      { "id": "homeassistant.trigger_3", "description": "Triggered from Home Assistant (slot 3)", "category": "homeassistant", "payload": { "slot": { "type": "number" }, "data": { "type": "string", "optional": true } } },
+      { "id": "homeassistant.trigger_4", "description": "Triggered from Home Assistant (slot 4)", "category": "homeassistant", "payload": { "slot": { "type": "number" }, "data": { "type": "string", "optional": true } } },
+      { "id": "homeassistant.trigger_5", "description": "Triggered from Home Assistant (slot 5)", "category": "homeassistant", "payload": { "slot": { "type": "number" }, "data": { "type": "string", "optional": true } } }
+    ],
+    "actions": [],
+    "defaultSubscriptions": []
+  },
+  "i18n": {
+    "en": {
+      "name": "Home Assistant",
+      "description": "Makes the Autodarts board a Home Assistant device.",
+      "config": { "allowedHosts": { "label": "Allowed Home Assistant hosts", "description": "Optional, comma separated host names or IPs the webhook may point to (empty = any)" } }
+    },
+    "de": {
+      "name": "Home Assistant",
+      "description": "Macht das Autodarts-Board zu einem Home-Assistant-Gerät.",
+      "config": { "allowedHosts": { "label": "Erlaubte Home-Assistant-Hosts", "description": "Optional, kommagetrennte Hostnamen oder IPs, auf die der Webhook zeigen darf (leer = alle)" } }
+    }
+  }
+}

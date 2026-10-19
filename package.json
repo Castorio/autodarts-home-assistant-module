@@ -1,0 +1,24 @@
+{
+  "name": "autodarts-homeassistant-module",
+  "version": "0.1.0",
+  "description": "IO-Darts-Agent module that makes the Autodarts board a Home Assistant device",
+  "main": "dist/main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "author": "castor.io / Christoph Castor",
+  "dependencies": {
+    "@autodarts-hub/module-sdk": "file:../AutodartsClient/module-sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": { "node": ">=18.0.0" }
+}
