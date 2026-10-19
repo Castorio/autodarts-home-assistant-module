@@ -1,9 +1,13 @@
 """Tests for setup, polling and unload."""
 
 from datetime import timedelta
+from unittest.mock import patch
+
+import aiohttp
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.util import dt as dt_util
@@ -142,3 +146,64 @@ async def test_unload_unregisters(hass, aioclient_mock, ha_url):
     entry = await setup_entry(hass)
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert len(calls(aioclient_mock, "DELETE", routes("/webhook"))) == 1
+
+
+def ha_webhook_registered(hass):
+    return WEBHOOK_ID in hass.data.get("webhook", {})
+
+
+async def test_unload_unregisters_ha_webhook_too(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock)
+    entry = await setup_entry(hass)
+    assert ha_webhook_registered(hass)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert not ha_webhook_registered(hass)
+
+
+async def test_failed_first_refresh_unregisters_ha_webhook(hass, aioclient_mock, ha_url):
+    aioclient_mock.post(f"{URL}/api/auth/login", json={"success": True})
+    aioclient_mock.get(f"{URL}/api/status", status=500, json={})
+    entry = await setup_entry(hass)
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert not ha_webhook_registered(hass)
+
+
+async def test_failed_platform_setup_unregisters_both_webhooks(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock)
+    with patch.object(
+        hass.config_entries, "async_forward_entry_setups", side_effect=RuntimeError("platform broke")
+    ):
+        entry = await setup_entry(hass)
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert not ha_webhook_registered(hass)
+    assert len(calls(aioclient_mock, "DELETE", routes("/webhook"))) == 1
+
+
+async def test_failed_platform_setup_ignores_hub_errors_on_cleanup(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock)
+    aioclient_mock.delete(routes("/webhook"), status=500, json={})
+    with patch.object(
+        hass.config_entries, "async_forward_entry_setups", side_effect=RuntimeError("platform broke")
+    ):
+        entry = await setup_entry(hass)
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert not ha_webhook_registered(hass)
+
+
+async def test_failed_platform_unload_keeps_webhooks(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock)
+    entry = await setup_entry(hass)
+    with patch.object(hass.config_entries, "async_unload_platforms", return_value=False):
+        assert not await hass.config_entries.async_unload(entry.entry_id)
+    assert ha_webhook_registered(hass)
+    assert calls(aioclient_mock, "DELETE", routes("/webhook")) == []
+
+
+async def test_hub_session_has_its_own_cookie_jar(hass, aioclient_mock, ha_url):
+    """The hub cookie must live only in HubClient, not in a jar shared with other integrations."""
+    mock_hub(aioclient_mock)
+    with patch(
+        "custom_components.io_darts.async_create_clientsession", wraps=async_create_clientsession
+    ) as create:
+        await setup_entry(hass)
+    assert isinstance(create.call_args.kwargs["cookie_jar"], aiohttp.DummyCookieJar)

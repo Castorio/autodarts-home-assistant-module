@@ -2,9 +2,12 @@
 
 from unittest.mock import patch
 
+import aiohttp
+
 import pytest
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.io_darts.const import DOMAIN
@@ -16,7 +19,10 @@ USER_INPUT = {"url": URL + "/", "username": "admin", "password": "pw"}
 
 @pytest.fixture(autouse=True)
 def no_setup():
-    with patch("custom_components.io_darts.async_setup_entry", return_value=True):
+    with (
+        patch("custom_components.io_darts.async_setup_entry", return_value=True),
+        patch("custom_components.io_darts.async_unload_entry", return_value=True),
+    ):
         yield
 
 
@@ -102,3 +108,13 @@ async def test_reauth(hass, aioclient_mock):
     assert result["reason"] == "reauth_successful"
     assert entry.data["password"] == "new"
     assert entry.data["webhook_id"] == ENTRY_DATA["webhook_id"]
+
+
+async def test_flow_uses_a_private_cookie_jar(hass, aioclient_mock):
+    mock_hub(aioclient_mock)
+    with patch(
+        "custom_components.io_darts.config_flow.async_create_clientsession", wraps=async_create_clientsession
+    ) as create:
+        result = await start(hass)
+        await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+    assert isinstance(create.call_args.kwargs["cookie_jar"], aiohttp.DummyCookieJar)

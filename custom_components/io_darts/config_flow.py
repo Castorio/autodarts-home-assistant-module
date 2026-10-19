@@ -5,11 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from yarl import URL
 
 from .api import HubAuthError, HubClient, HubConnectionError, ModuleMissingError
@@ -42,10 +43,16 @@ class IoDartsConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _validate(self, url: str, username: str | None, password: str | None) -> str:
         """Check login, hub and module; return the unique id."""
-        client = HubClient(async_get_clientsession(self.hass), url, username, password)
-        await client.login()
-        status = await client.get_status()
-        await client.webhook_registered()
+        # Private cookie jar so the hub cookie never lands in a shared session;
+        # the session lives only for this check.
+        session = async_create_clientsession(self.hass, auto_cleanup=False, cookie_jar=aiohttp.DummyCookieJar())
+        try:
+            client = HubClient(session, url, username, password)
+            await client.login()
+            status = await client.get_status()
+            await client.webhook_registered()
+        finally:
+            session.detach()
         board_id = (status.get("autodarts") or {}).get("boardId")
         if board_id:
             return str(board_id)

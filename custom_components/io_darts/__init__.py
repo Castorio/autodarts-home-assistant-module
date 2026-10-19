@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import aiohttp
 from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.helpers.typing import ConfigType
 
@@ -31,8 +32,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: IoDartsConfigEntry) -> bool:
+    # Own session with a dummy jar: the hub cookie is held only by HubClient,
+    # never in a jar shared with other integrations. HA detaches the session
+    # when this entry unloads (or on shutdown).
     client = HubClient(
-        async_get_clientsession(hass),
+        async_create_clientsession(hass, cookie_jar=aiohttp.DummyCookieJar()),
         entry.data[CONF_URL],
         entry.data.get(CONF_USERNAME),
         entry.data.get(CONF_PASSWORD),
@@ -83,16 +87,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: IoDartsConfigEntry) -> b
     # listeners, but the webhook re-registration in _sync_module must keep
     # running regardless of how many entities are loaded.
     entry.async_on_unload(coordinator.async_add_listener(lambda: None))
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except Exception:
+        await _unregister_webhooks(hass, entry, client)
+        raise
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IoDartsConfigEntry) -> bool:
+    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        return False
+    await _unregister_webhooks(hass, entry, entry.runtime_data.client)
+    return True
+
+
+async def _unregister_webhooks(hass: HomeAssistant, entry: IoDartsConfigEntry, client: HubClient) -> None:
+    """Remove the HA webhook and, best effort, its registration in the hub module."""
     webhook.async_unregister(hass, entry.data[CONF_WEBHOOK_ID])
-    coordinator = getattr(entry, "runtime_data", None)
-    if coordinator is not None:
-        try:
-            await coordinator.client.unregister_webhook()
-        except HubError:
-            pass
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    try:
+        await client.unregister_webhook()
+    except HubError:
+        pass
