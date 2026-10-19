@@ -15,6 +15,7 @@ from homeassistant.helpers.typing import ConfigType
 from .api import HubAuthError, HubClient, HubConnectionError, HubError
 from .const import CONF_WEBHOOK_ID, DOMAIN
 from .coordinator import IoDartsCoordinator
+from .services import async_register_services
 from .webhook_handler import make_webhook_handler
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
@@ -24,7 +25,8 @@ type IoDartsConfigEntry = ConfigEntry[IoDartsCoordinator]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the integration (services are added in Task 11)."""
+    """Set up the integration: register the services shared by all entries."""
+    async_register_services(hass)
     return True
 
 
