@@ -72,6 +72,20 @@ async def test_hub_started_unknown_without_uptime(hass, aioclient_mock):
     assert hass.states.get("sensor.io_darts_board_hub_started").state == "unknown"
 
 
+async def test_hub_started_does_not_move_on_pushes(hass, aioclient_mock, hass_client_no_auth, freezer):
+    freezer.move_to("2026-10-19T12:00:59+00:00")
+    await setup(hass, aioclient_mock)
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T11:00:00+00:00"
+    freezer.tick(timedelta(seconds=29))
+    client = await hass_client_no_auth()
+    await client.post(
+        f"/api/webhook/{WEBHOOK_ID}",
+        json={"v": 1, "type": "state", "ts": "t", "tags": [], "data": {}, "state": MATCH},
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.io_darts_board_hub_started").state == "2026-10-19T11:00:00+00:00"
+
+
 async def test_push_updates_sensors(hass, aioclient_mock, hass_client_no_auth):
     await setup(hass, aioclient_mock)
     client = await hass_client_no_auth()

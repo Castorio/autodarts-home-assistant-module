@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
-import voluptuous as vol
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import HubAuthError, HubClient, HubConnectionError, ModuleMissingError
 from .const import DOMAIN, POLL_INTERVAL
@@ -41,6 +43,16 @@ class HubData:
 
     status: dict[str, Any]
     modules: list[dict[str, Any]]
+    hub_started: datetime | None = None
+
+
+def _started_at(status: dict[str, Any]) -> datetime | None:
+    """Start time of the hub (now - uptime), truncated to the minute so it stays stable between polls."""
+    uptime = status.get("uptime")
+    if isinstance(uptime, bool) or not isinstance(uptime, (int, float)) or not 0 <= uptime < 10**10:
+        return None
+    started = dt_util.utcnow() - timedelta(seconds=uptime)
+    return started.replace(second=0, microsecond=0)
 
 
 class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
@@ -63,7 +75,7 @@ class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except HubConnectionError as err:
             raise UpdateFailed(str(err)) from err
-        return HubData(status=status, modules=modules)
+        return HubData(status=status, modules=modules, hub_started=_started_at(status))
 
     async def _sync_module(self) -> None:
         """Re-register our webhook on every poll; reload state when the module's URL changed.
