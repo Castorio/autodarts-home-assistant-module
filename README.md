@@ -202,12 +202,13 @@ alias: Dart light follows the current player
 triggers:
   - trigger: state
     entity_id: sensor.io_darts_board_current_player_color
+    not_to: ["unknown", "unavailable"]
 actions:
   - action: light.turn_on
     target:
       entity_id: light.dart_light
     data:
-      rgb_color: "{{ state_attr('sensor.io_darts_board_current_player_color', 'rgb_color') }}"
+      rgb_color: "{{ trigger.to_state.attributes.rgb_color }}"
 ```
 
 ## Security
