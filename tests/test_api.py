@@ -26,7 +26,7 @@ async def test_login_stores_session_cookie(hass, aioclient_mock):
     assert await c.get_status() == STATUS
     _, _, body, _ = aioclient_mock.mock_calls[0]
     assert body == {"username": "admin", "password": "pw"}
-    assert aioclient_mock.mock_calls[1][3]["Cookie"] == "autodarts_session=sid1"
+    assert aioclient_mock.mock_calls[1][3]["Cookie"] == "autodarts_session=sid1; session=sid1"
 
 
 async def test_login_skipped_without_username(hass, aioclient_mock):
@@ -84,6 +84,15 @@ async def test_module_routes(hass, aioclient_mock):
     await c.trigger_intent(2, "party")
     assert aioclient_mock.mock_calls[1][2] == {"url": "http://ha/api/webhook/x"}
     assert aioclient_mock.mock_calls[4][2] == {"slot": 2, "data": "party"}
+
+
+async def test_module_route_sends_cookie_under_legacy_name_too(hass, aioclient_mock):
+    aioclient_mock.post(f"{URL}/api/auth/login", json={"success": True}, cookies={"autodarts_session": "sid2"})
+    aioclient_mock.get(routes("/webhook"), json={"registered": True})
+    c = client(hass)
+    await c.login()
+    await c.webhook_registered()
+    assert aioclient_mock.mock_calls[1][3]["Cookie"] == "autodarts_session=sid2; session=sid2"
 
 
 async def test_hub_actions(hass, aioclient_mock):

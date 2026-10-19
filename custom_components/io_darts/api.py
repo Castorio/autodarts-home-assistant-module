@@ -8,7 +8,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import MODULE_ROUTES, REQUEST_TIMEOUT, SESSION_COOKIE
+from .const import LEGACY_SESSION_COOKIE, MODULE_ROUTES, REQUEST_TIMEOUT, SESSION_COOKIE
 
 _MODULE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 _MODULE_ACTIONS = {"start", "stop", "restart"}
@@ -73,7 +73,11 @@ class HubClient:
             raise HubConnectionError(str(err)) from err
 
     async def _request(self, method: str, path: str, json: Any = None, retry: bool = True) -> Any:
-        headers = {"Cookie": f"{SESSION_COOKIE}={self._cookie}"} if self._cookie else {}
+        headers = (
+            {"Cookie": f"{SESSION_COOKIE}={self._cookie}; {LEGACY_SESSION_COOKIE}={self._cookie}"}
+            if self._cookie
+            else {}
+        )
         retry_needed = False
         text: str | None = None
         try:

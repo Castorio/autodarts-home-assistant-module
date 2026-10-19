@@ -6,6 +6,12 @@ DOMAIN = "io_darts"
 MODULE_ID = "homeassistant"
 MODULE_ROUTES = f"/api/modules/{MODULE_ID}/routes"
 SESSION_COOKIE = "autodarts_session"
+# Some deployed hubs have a bug where the module-route auth check reads a
+# cookie named "session" instead of "autodarts_session" (the name the hub's
+# own login response and global API auth hook actually use). Sending the
+# same session value under both names keeps those hubs working until they
+# are updated. Remove once all hubs are confirmed fixed.
+LEGACY_SESSION_COOKIE = "session"
 CONF_WEBHOOK_ID = "webhook_id"
 POLL_INTERVAL = timedelta(seconds=30)
 REQUEST_TIMEOUT = 10
