@@ -57,18 +57,3 @@ export const INTENT_SLOTS = 5;
 export function intentId(slot: number): string {
   return `homeassistant.trigger_${slot}`;
 }
-
-/** Hub events this module subscribes to; must stay in sync with module.json's "events". */
-export const SUBSCRIBED_EVENTS = [
-  'match.start',
-  'match.state',
-  'match.delete',
-  'match.finish',
-  'match.finished',
-  'throw.detected',
-  'turn.finished',
-  'player.change',
-  'game.finished',
-  'cricket.state',
-  'cricket.closed',
-] as const;

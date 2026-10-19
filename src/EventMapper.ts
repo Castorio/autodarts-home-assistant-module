@@ -1,9 +1,8 @@
+import { MAX_STRING } from './MatchTracker.js';
 import { throwTags, turnTags, type ThrowLike, type TurnLike } from './tags.js';
 import type { MatchSnapshot, PushPayload, PushType, PushValue, Tag } from './types.js';
 
 type Obj = Record<string, unknown>;
-
-const MAX_STRING = 200;
 
 const MAPPING: Record<string, { type: PushType; fields: string[] }> = {
   'match.start': { type: 'match_started', fields: ['matchId'] },

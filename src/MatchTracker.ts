@@ -11,8 +11,13 @@ function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+/** Same limits as PUSH_SCHEMA in custom_components/io_darts/webhook_handler.py;
+ *  a longer string or more players would make Home Assistant reject every push. */
+export const MAX_STRING = 200;
+export const MAX_PLAYERS = 16;
+
 function str(v: unknown): string | null {
-  return typeof v === 'string' ? v : null;
+  return typeof v === 'string' ? v.slice(0, MAX_STRING) : null;
 }
 
 const MODES: GameMode[] = ['x01', 'cricket', 'tactics', 'other'];
@@ -93,7 +98,7 @@ export class MatchTracker {
     this.state.variant = str(d.variant) ?? str(game.variant);
     this.state.mode = mode;
     this.state.round = num(d.round);
-    this.state.players = d.players.filter(isObj).map((p, position): PlayerSnapshot => {
+    this.state.players = d.players.filter(isObj).slice(0, MAX_PLAYERS).map((p, position): PlayerSnapshot => {
       const index = num(p.index) ?? position;
       const marksGame = mode === 'cricket' || mode === 'tactics';
       const score = marksGame && this.cricketPoints.has(index) ? this.cricketPoints.get(index)! : num(scores[position]);

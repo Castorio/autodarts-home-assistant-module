@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MatchTracker, emptySnapshot } from './MatchTracker.js';
+import { MAX_PLAYERS, MAX_STRING, MatchTracker, emptySnapshot } from './MatchTracker.js';
 
 const game = { variant: 'X01', mode: 'x01', cutThroat: false };
 
@@ -114,5 +114,32 @@ describe('MatchTracker', () => {
     t.apply({ type: 'match.state', data: null });
     t.apply({ type: 'throw.detected', data: {} });
     expect(t.snapshot()).toEqual(emptySnapshot());
+  });
+
+  it('caps strings at 200 characters and players at 16, like the Home Assistant webhook schema', () => {
+    const long = 'x'.repeat(500);
+    const t = new MatchTracker();
+    t.apply({ type: 'match.start', data: { matchId: long } });
+    expect(t.snapshot().matchId).toHaveLength(MAX_STRING);
+    const players = Array.from({ length: 20 }, (_, i) => ({ index: i, name: `${i}${long}` }));
+    t.apply(matchState({ matchId: long, variant: long, players, gameScores: players.map(() => 501), player: 0 }));
+    t.apply({ type: 'throw.detected', data: { segment: { name: long } } });
+    t.apply({ type: 'match.finished', data: { winnerName: long } });
+    const s = t.snapshot();
+    expect(MAX_STRING).toBe(200);
+    expect(MAX_PLAYERS).toBe(16);
+    expect(s.players).toHaveLength(MAX_PLAYERS);
+    expect(s.players.every((p) => p.name.length === MAX_STRING)).toBe(true);
+    expect(s.currentPlayer?.name).toHaveLength(MAX_STRING);
+    expect(s.matchId).toHaveLength(MAX_STRING);
+    expect(s.variant).toHaveLength(MAX_STRING);
+    expect(s.lastThrow).toHaveLength(MAX_STRING);
+    expect(s.winnerName).toHaveLength(MAX_STRING);
+  });
+
+  it('caps the game variant fallback too', () => {
+    const t = new MatchTracker();
+    t.apply(matchState({ variant: undefined, game: { mode: 'x01', variant: 'v'.repeat(300) } }));
+    expect(t.snapshot().variant).toHaveLength(MAX_STRING);
   });
 });
