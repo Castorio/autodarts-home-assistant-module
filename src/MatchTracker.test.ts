@@ -43,10 +43,10 @@ describe('MatchTracker', () => {
     expect(s.mode).toBe('x01');
     expect(s.round).toBe(3);
     expect(s.players).toEqual([
-      { index: 0, name: 'Alice', score: 301, legsWon: 1, setsWon: 0 },
-      { index: 1, name: 'Bob', score: 241, legsWon: 0, setsWon: 0 },
+      { index: 0, name: 'Alice', score: 301, legsWon: 1, setsWon: 0, color: null },
+      { index: 1, name: 'Bob', score: 241, legsWon: 0, setsWon: 0, color: null },
     ]);
-    expect(s.currentPlayer).toEqual({ index: 1, name: 'Bob', score: 241, legsWon: 0, setsWon: 0 });
+    expect(s.currentPlayer).toEqual({ index: 1, name: 'Bob', score: 241, legsWon: 0, setsWon: 0, color: null });
   });
 
   it('records the last throw and the last turn', () => {
@@ -141,5 +141,67 @@ describe('MatchTracker', () => {
     const t = new MatchTracker();
     t.apply(matchState({ variant: undefined, game: { mode: 'x01', variant: 'v'.repeat(300) } }));
     expect(t.snapshot().variant).toHaveLength(MAX_STRING);
+  });
+});
+
+describe('player colors', () => {
+  const colored = (overrides: Record<string, unknown> = {}) =>
+    matchState({
+      players: [
+        { index: 0, name: 'Alice', color: '#3B82F6' },
+        { index: 1, name: 'Bob', color: '#ef4444' },
+        { index: 2, name: 'Carol', color: 'red' },
+      ],
+      gameScores: [301, 241, 501],
+      ...overrides,
+    });
+
+  it('takes valid hex colors in lower case and drops invalid ones', () => {
+    const t = new MatchTracker();
+    t.apply(colored());
+    expect(t.snapshot().players.map((p) => p.color)).toEqual(['#3b82f6', '#ef4444', null]);
+  });
+
+  it('sets current and next player color in throw order', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0 }));
+    expect(t.snapshot().currentPlayerColor).toBe('#3b82f6');
+    expect(t.snapshot().nextPlayerColor).toBe('#ef4444');
+  });
+
+  it('wraps around to the first player', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 1, players: [{ index: 0, name: 'Alice', color: '#3b82f6' }, { index: 1, name: 'Bob', color: '#ef4444' }], gameScores: [1, 2] }));
+    expect(t.snapshot().nextPlayerColor).toBe('#3b82f6');
+  });
+
+  it('uses the same player as next in a single player game', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0, players: [{ index: 0, name: 'Alice', color: '#3b82f6' }], gameScores: [501] }));
+    expect(t.snapshot().nextPlayerColor).toBe('#3b82f6');
+  });
+
+  it('switches the current player on player.change before the next match.state', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0, players: [{ index: 0, name: 'Alice', color: '#3b82f6' }, { index: 1, name: 'Bob', color: '#ef4444' }], gameScores: [1, 2] }));
+    t.apply({ type: 'player.change', data: { currentPlayer: 1, playerIndex: 1, playerName: 'Bob' } });
+    expect(t.snapshot().currentPlayer?.name).toBe('Bob');
+    expect(t.snapshot().currentPlayerColor).toBe('#ef4444');
+    expect(t.snapshot().nextPlayerColor).toBe('#3b82f6');
+  });
+
+  it('ignores a player.change with an out of range position', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0 }));
+    t.apply({ type: 'player.change', data: { currentPlayer: 7 } });
+    expect(t.snapshot().currentPlayerColor).toBe('#3b82f6');
+  });
+
+  it('clears colors on match end', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0 }));
+    t.apply({ type: 'match.finish', data: { matchId: 'm1' } });
+    expect(t.snapshot().currentPlayerColor).toBeNull();
+    expect(t.snapshot().nextPlayerColor).toBeNull();
   });
 });

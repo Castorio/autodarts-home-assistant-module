@@ -11,13 +11,19 @@ function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-/** Same limits as PUSH_SCHEMA in custom_components/io_darts/webhook_handler.py;
+/** Same limits as PUSH_SCHEMA in custom_components/io_darts/schema.py;
  *  a longer string or more players would make Home Assistant reject every push. */
 export const MAX_STRING = 200;
 export const MAX_PLAYERS = 16;
 
 function str(v: unknown): string | null {
   return typeof v === 'string' ? v.slice(0, MAX_STRING) : null;
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+function color(v: unknown): string | null {
+  return typeof v === 'string' && HEX_COLOR.test(v) ? v.toLowerCase() : null;
 }
 
 const MODES: GameMode[] = ['x01', 'cricket', 'tactics', 'other'];
@@ -34,6 +40,8 @@ export function emptySnapshot(): MatchSnapshot {
     lastThrow: null,
     lastTurnPoints: null,
     winnerName: null,
+    currentPlayerColor: null,
+    nextPlayerColor: null,
   };
 }
 
@@ -74,6 +82,16 @@ export class MatchTracker {
       case 'match.finished':
         if (isObj(d)) this.state.winnerName = str(d.winnerName);
         return;
+      case 'player.change':
+        // The hub sends player.change before the match.state of the same update
+        if (isObj(d)) {
+          const position = num(d.currentPlayer);
+          if (position !== null && Number.isInteger(position) && position >= 0 && position < this.state.players.length) {
+            this.currentPosition = position;
+            this.updateCurrentPlayer();
+          }
+        }
+        return;
       default:
         return;
     }
@@ -108,6 +126,7 @@ export class MatchTracker {
         score,
         legsWon: num(legsWon[index]) ?? 0,
         setsWon: num(setsWon[index]) ?? 0,
+        color: color(p.color),
       };
     });
     this.currentPosition = num(d.player);
@@ -128,7 +147,12 @@ export class MatchTracker {
   }
 
   private updateCurrentPlayer(): void {
-    const p = this.currentPosition === null ? undefined : this.state.players[this.currentPosition];
-    this.state.currentPlayer = p ? { ...p } : null;
+    const players = this.state.players;
+    const position = this.currentPosition;
+    const current = position === null ? undefined : players[position];
+    const next = current && players.length > 0 ? players[(position! + 1) % players.length] : undefined;
+    this.state.currentPlayer = current ? { ...current } : null;
+    this.state.currentPlayerColor = current?.color ?? null;
+    this.state.nextPlayerColor = next?.color ?? null;
   }
 }

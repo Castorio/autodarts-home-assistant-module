@@ -18,7 +18,7 @@ const NOW = new Date('2026-10-19T12:00:00.000Z');
 
 const x01 = { variant: 'X01', mode: 'x01' };
 const cricket = { variant: 'Cricket', mode: 'cricket' };
-const players = [{ index: 0, name: 'Alice' }, { index: 1, name: 'Bob' }];
+const players = [{ index: 0, name: 'Alice', color: '#3B82F6' }, { index: 1, name: 'Bob', color: '#ef4444' }];
 
 const EVENTS: { type: string; data: unknown }[] = [
   { type: 'match.start', data: { matchId: 'm1', boardId: 'b1' } },
@@ -31,7 +31,7 @@ const EVENTS: { type: string; data: unknown }[] = [
     data: { segment: { name: 'T20', number: 20, multiplier: 3 }, points: 60, turnPoints: 180, busted: false, game: x01 },
   },
   { type: 'turn.finished', data: { playerName: 'Alice', playerIndex: 0, turnScore: 121, remaining: 0, busted: false, round: 7, game: x01 } },
-  { type: 'player.change', data: { playerName: 'Bob', playerIndex: 1, remaining: 301 } },
+  { type: 'player.change', data: { playerName: 'Bob', playerIndex: 1, remaining: 301, currentPlayer: 1 } },
   { type: 'game.finished', data: { winnerName: 'Alice', winnerPlayerIndex: 0, leg: 1, set: 1 } },
   { type: 'match.finished', data: { winnerName: 'Alice', winnerPlayerIndex: 0 } },
   { type: 'match.finish', data: { matchId: 'm1' } },

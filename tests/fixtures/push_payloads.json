@@ -17,7 +17,9 @@
       "players": [],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": null,
+      "nextPlayerColor": null
     }
   },
   {
@@ -37,7 +39,8 @@
         "name": "Alice",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#3b82f6"
       },
       "players": [
         {
@@ -45,19 +48,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#3b82f6",
+      "nextPlayerColor": "#ef4444"
     }
   },
   {
@@ -87,7 +94,8 @@
         "name": "Alice",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#3b82f6"
       },
       "players": [
         {
@@ -95,19 +103,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": "T20",
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#3b82f6",
+      "nextPlayerColor": "#ef4444"
     }
   },
   {
@@ -136,7 +148,8 @@
         "name": "Alice",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#3b82f6"
       },
       "players": [
         {
@@ -144,19 +157,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": "T20",
       "lastTurnPoints": 121,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#3b82f6",
+      "nextPlayerColor": "#ef4444"
     }
   },
   {
@@ -167,7 +184,9 @@
     "data": {
       "playerName": "Bob",
       "playerIndex": 1,
-      "remaining": 301
+      "remaining": 301,
+      "playerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     },
     "state": {
       "active": true,
@@ -176,11 +195,12 @@
       "mode": "x01",
       "round": 1,
       "currentPlayer": {
-        "index": 0,
-        "name": "Alice",
+        "index": 1,
+        "name": "Bob",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -188,19 +208,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": "T20",
       "lastTurnPoints": 121,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -221,11 +245,12 @@
       "mode": "x01",
       "round": 1,
       "currentPlayer": {
-        "index": 0,
-        "name": "Alice",
+        "index": 1,
+        "name": "Bob",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -233,19 +258,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": "T20",
       "lastTurnPoints": 121,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -264,11 +293,12 @@
       "mode": "x01",
       "round": 1,
       "currentPlayer": {
-        "index": 0,
-        "name": "Alice",
+        "index": 1,
+        "name": "Bob",
         "score": 501,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -276,19 +306,23 @@
           "name": "Alice",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 501,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": "T20",
       "lastTurnPoints": 121,
-      "winnerName": "Alice"
+      "winnerName": "Alice",
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -309,7 +343,9 @@
       "players": [],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": null,
+      "nextPlayerColor": null
     }
   },
   {
@@ -330,7 +366,9 @@
       "players": [],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": null,
+      "nextPlayerColor": null
     }
   },
   {
@@ -350,7 +388,8 @@
         "name": "Bob",
         "score": 0,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -358,19 +397,23 @@
           "name": "Alice",
           "score": 0,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 0,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -390,7 +433,8 @@
         "name": "Bob",
         "score": 15,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -398,19 +442,23 @@
           "name": "Alice",
           "score": 40,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 15,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -434,7 +482,8 @@
         "name": "Bob",
         "score": 15,
         "legsWon": 0,
-        "setsWon": 0
+        "setsWon": 0,
+        "color": "#ef4444"
       },
       "players": [
         {
@@ -442,19 +491,23 @@
           "name": "Alice",
           "score": 40,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#3b82f6"
         },
         {
           "index": 1,
           "name": "Bob",
           "score": 15,
           "legsWon": 0,
-          "setsWon": 0
+          "setsWon": 0,
+          "color": "#ef4444"
         }
       ],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": "#ef4444",
+      "nextPlayerColor": "#3b82f6"
     }
   },
   {
@@ -475,7 +528,9 @@
       "players": [],
       "lastThrow": null,
       "lastTurnPoints": null,
-      "winnerName": null
+      "winnerName": null,
+      "currentPlayerColor": null,
+      "nextPlayerColor": null
     }
   }
 ]

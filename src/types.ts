@@ -26,6 +26,8 @@ export interface PlayerSnapshot {
   score: number | null;
   legsWon: number;
   setsWon: number;
+  /** #rrggbb from the hub (profile or default color), null if unknown */
+  color: string | null;
 }
 
 export interface MatchSnapshot {
@@ -39,6 +41,8 @@ export interface MatchSnapshot {
   lastThrow: string | null;
   lastTurnPoints: number | null;
   winnerName: string | null;
+  currentPlayerColor: string | null;
+  nextPlayerColor: string | null;
 }
 
 export type PushValue = string | number | boolean | null;

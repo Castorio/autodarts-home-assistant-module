@@ -59,6 +59,10 @@ export function mapEvent(event: { type: string; data: unknown }, state: MatchSna
     if (!m) return null;
     type = m.type;
     data = pick(d, m.fields);
+    if (event.type === 'player.change') {
+      data.playerColor = state.currentPlayerColor;
+      data.nextPlayerColor = state.nextPlayerColor;
+    }
     if (event.type === 'turn.finished') tags = turnTags(d as unknown as TurnLike);
   }
 

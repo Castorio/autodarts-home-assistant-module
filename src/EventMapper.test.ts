@@ -51,7 +51,7 @@ describe('mapEvent', () => {
     ['match.finish', { matchId: 'm1' }, 'match_closed', { matchId: 'm1' }],
     ['match.finished', { winnerName: 'Alice', winnerPlayerIndex: 0, players: [] }, 'match_finished', { winnerName: 'Alice', winnerPlayerIndex: 0 }],
     ['game.finished', { winnerName: 'Bob', winnerPlayerIndex: 1, leg: 2, set: 1, players: [] }, 'leg_finished', { winnerName: 'Bob', winnerPlayerIndex: 1, leg: 2, set: 1 }],
-    ['player.change', { playerName: 'Bob', playerIndex: 1, remaining: 241, previousPlayer: 0, currentPlayer: 1 }, 'player_changed', { playerName: 'Bob', playerIndex: 1, remaining: 241 }],
+    ['player.change', { playerName: 'Bob', playerIndex: 1, remaining: 241, previousPlayer: 0, currentPlayer: 1 }, 'player_changed', { playerName: 'Bob', playerIndex: 1, remaining: 241, playerColor: null, nextPlayerColor: null }],
     ['cricket.closed', { field: '20', playerName: 'Alice', playerIndex: 0, matchId: 'm1' }, 'cricket_closed', { field: '20', playerName: 'Alice', playerIndex: 0 }],
     ['match.state', { matchId: 'm1' }, 'state', {}],
     ['cricket.state', { matchId: 'm1' }, 'state', {}],
@@ -64,7 +64,13 @@ describe('mapEvent', () => {
 
   it('drops non-scalar and oversized values', () => {
     const p = mapEvent({ type: 'player.change', data: { playerName: 'x'.repeat(500), playerIndex: { evil: true }, remaining: 3 } }, state, now);
-    expect(p?.data).toEqual({ playerName: 'x'.repeat(200), playerIndex: null, remaining: 3 });
+    expect(p?.data).toEqual({ playerName: 'x'.repeat(200), playerIndex: null, remaining: 3, playerColor: null, nextPlayerColor: null });
+  });
+
+  it('adds the player colors to player_changed', () => {
+    const colored = { ...state, currentPlayerColor: '#ef4444', nextPlayerColor: '#3b82f6' };
+    const p = mapEvent({ type: 'player.change', data: { playerName: 'Bob', playerIndex: 1, remaining: 241 } }, colored, now);
+    expect(p?.data).toEqual({ playerName: 'Bob', playerIndex: 1, remaining: 241, playerColor: '#ef4444', nextPlayerColor: '#3b82f6' });
   });
 
   it('ignores unknown events', () => {
