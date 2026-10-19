@@ -96,3 +96,17 @@ async def test_unknown_before_first_color(hass, aioclient_mock):
     await setup(hass, aioclient_mock, {**MATCH, "active": False, "currentPlayerColor": None, "nextPlayerColor": None})
     assert hass.states.get(CURRENT).state == "unknown"
     assert "rgb_color" not in hass.states.get(CURRENT).attributes
+
+
+async def test_colors_ignored_while_inactive_even_if_set(hass, aioclient_mock, hass_client_no_auth):
+    # A push with active: false but (non-null) colors still set must not move the
+    # sensors; only an active match may change the displayed color.
+    await setup(hass, aioclient_mock)
+    await push(
+        hass,
+        hass_client_no_auth,
+        {**MATCH, "active": False, "currentPlayerColor": "#00ff00", "nextPlayerColor": "#0000ff"},
+        "match_closed",
+    )
+    assert hass.states.get(CURRENT).state == "#ef4444"
+    assert hass.states.get(NEXT).state == "#3b82f6"

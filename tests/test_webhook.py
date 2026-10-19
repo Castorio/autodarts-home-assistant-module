@@ -87,11 +87,19 @@ async def test_invalid_payloads_are_rejected(hass, aioclient_mock, hass_client_n
 async def test_push_without_colors_from_older_module(hass, aioclient_mock, hass_client_no_auth):
     await setup(hass, aioclient_mock)
     client = await hass_client_no_auth()
+    # Give the color sensors a known value first (the webhook test setup's initial poll
+    # starts inactive, so the colors are still "unknown" otherwise).
+    resp = await client.post(f"/api/webhook/{WEBHOOK_ID}", json=push(state=MATCH))
+    assert resp.status == 200
     old_player = {"index": 0, "name": "Alice", "score": 301, "legsWon": 0, "setsWon": 0}
     old_state = {k: v for k, v in MATCH.items() if k not in ("currentPlayerColor", "nextPlayerColor")}
     old_state = {**old_state, "players": [old_player], "currentPlayer": old_player}
     resp = await client.post(f"/api/webhook/{WEBHOOK_ID}", json=push(state=old_state))
     assert resp.status == 200
+    # The older module's payload has no color fields at all (they default to None); the
+    # color sensors must keep showing the last color they had, not go blank.
+    assert hass.states.get("sensor.io_darts_board_current_player_color").state == "#ef4444"
+    assert hass.states.get("sensor.io_darts_board_next_player_color").state == "#3b82f6"
 
 
 async def test_push_with_invalid_color_is_rejected(hass, aioclient_mock, hass_client_no_auth):
