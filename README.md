@@ -17,6 +17,8 @@ to a module registry or the HACS default store yet — install manually as descr
 
 ## Installation
 
+Step-by-step guide with screenshots: [English](docs/en/setup.md) | [Deutsch](docs/de/setup.md)
+
 ### Hub module (`homeassistant`)
 
 Install it on the hub directly from this repository:
