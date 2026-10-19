@@ -1,0 +1,85 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IO-Darts-Hub",
+        "description": "Adresse des IO-Darts-Agent-Hubs, z. B. http://192.168.41.108:3000. Benutzername und Passwort nur, wenn am Hub die Web-Anmeldung aktiv ist. Das Hub-Modul \"homeassistant\" muss installiert sein und laufen.",
+        "data": { "url": "Hub-URL", "username": "Benutzername", "password": "Passwort" }
+      },
+      "reauth_confirm": {
+        "title": "Erneut am Hub anmelden",
+        "data": { "username": "Benutzername", "password": "Passwort" }
+      }
+    },
+    "error": {
+      "invalid_url": "Gib eine URL ein, die mit http:// oder https:// beginnt.",
+      "invalid_auth": "Benutzername oder Passwort ist falsch.",
+      "cannot_connect": "Der Hub ist nicht erreichbar.",
+      "module_missing": "Das Hub-Modul \"homeassistant\" ist nicht installiert oder läuft nicht."
+    },
+    "abort": {
+      "already_configured": "Dieser Hub ist bereits eingerichtet.",
+      "reauth_successful": "Anmeldung aktualisiert."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "match_active": { "name": "Match aktiv" },
+      "autodarts_connected": { "name": "Autodarts verbunden" },
+      "hub_reachable": { "name": "Hub erreichbar" }
+    },
+    "sensor": {
+      "current_player": { "name": "Aktueller Spieler" },
+      "current_score": { "name": "Aktueller Punktestand" },
+      "last_throw": { "name": "Letzter Wurf" },
+      "last_turn_points": { "name": "Letzte Aufnahme" },
+      "variant": { "name": "Spielvariante" },
+      "round": { "name": "Runde" },
+      "hub_version": { "name": "Hub-Version" },
+      "uptime": { "name": "Hub-Laufzeit" },
+      "running_modules": { "name": "Laufende Module" }
+    },
+    "button": {
+      "autodarts_connect": { "name": "Autodarts verbinden" },
+      "autodarts_disconnect": { "name": "Autodarts trennen" },
+      "hub_restart": { "name": "Hub neu starten" },
+      "module_restart": { "name": "{module} neu starten" }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "match_started": "Match gestartet",
+      "match_won": "Match gewonnen",
+      "leg_won": "Leg gewonnen",
+      "player_changed": "Spielerwechsel",
+      "throw": "Dart geworfen",
+      "throw_180": "180 geworfen",
+      "bust": "Bust",
+      "bullseye": "Bullseye getroffen",
+      "triple": "Triple getroffen",
+      "high_finish": "High Finish (100+)",
+      "cricket_closed": "Cricket-Feld geschlossen"
+    }
+  },
+  "services": {
+    "trigger_intent": {
+      "name": "Intent auslösen",
+      "description": "Sendet homeassistant.trigger_<slot> am Hub; andere Module (WLED, Caller) reagieren wie im Hub eingestellt.",
+      "fields": {
+        "slot": { "name": "Slot", "description": "Intent-Slot 1 bis 5." },
+        "data": { "name": "Daten", "description": "Optionaler Text, der mit dem Intent mitgeht (max. 200 Zeichen)." },
+        "config_entry_id": { "name": "Hub", "description": "Nur bei mehr als einem Hub nötig." }
+      }
+    }
+  },
+  "issues": {
+    "module_missing": {
+      "title": "IO-Darts-Hub-Modul fehlt",
+      "description": "Das Hub-Modul \"homeassistant\" ist nicht installiert oder läuft nicht. Installiere oder starte es in der Hub-Oberfläche; bis dahin fehlen Match-Daten und Intents."
+    }
+  },
+  "exceptions": {
+    "hub_error": { "message": "Der Hub hat die Anfrage abgelehnt: {error}" },
+    "no_hub": { "message": "Kein IO-Darts-Hub eingerichtet oder mehr als einer: config_entry_id angeben." }
+  }
+}
