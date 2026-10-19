@@ -66,7 +66,7 @@
   "services": {
     "trigger_intent": {
       "name": "Intent auslösen",
-      "description": "Sendet homeassistant.trigger_<slot> am Hub; andere Module (WLED, Caller) reagieren wie im Hub eingestellt.",
+      "description": "Sendet homeassistant.trigger_1 bis homeassistant.trigger_5 am Hub; andere Module (WLED, Caller) reagieren wie im Hub eingestellt.",
       "fields": {
         "slot": { "name": "Slot", "description": "Intent-Slot 1 bis 5." },
         "data": { "name": "Daten", "description": "Optionaler Text, der mit dem Intent mitgeht (max. 200 Zeichen)." },

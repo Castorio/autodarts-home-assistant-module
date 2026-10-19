@@ -66,7 +66,7 @@
   "services": {
     "trigger_intent": {
       "name": "Trigger intent",
-      "description": "Emits homeassistant.trigger_<slot> on the hub; other modules (WLED, caller) react as configured in the hub.",
+      "description": "Emits homeassistant.trigger_1 to homeassistant.trigger_5 on the hub; other modules (WLED, caller) react as configured in the hub.",
       "fields": {
         "slot": { "name": "Slot", "description": "Intent slot 1 to 5." },
         "data": { "name": "Data", "description": "Optional text passed with the intent (max. 200 characters)." },
