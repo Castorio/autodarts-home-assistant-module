@@ -15,6 +15,15 @@ _MODULE_ACTIONS = {"start", "stop", "restart"}
 _AUTODARTS_ACTIONS = {"connect", "disconnect"}
 
 
+def _valid_module(m: Any) -> bool:
+    return (
+        isinstance(m, dict)
+        and isinstance(m.get("id"), str)
+        and isinstance(m.get("name"), str)
+        and isinstance(m.get("status", ""), str)
+    )
+
+
 class HubError(Exception):
     """Base error of the hub client."""
 
@@ -127,7 +136,7 @@ class HubClient:
         result = await self._request("GET", "/api/modules")
         if not isinstance(result, list):
             raise HubConnectionError("expected a JSON array from /api/modules")
-        return result
+        return [m for m in result if _valid_module(m)]
 
     async def module_action(self, module_id: str, action: str) -> None:
         if not _MODULE_ID.match(module_id) or action not in _MODULE_ACTIONS:

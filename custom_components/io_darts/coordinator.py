@@ -10,10 +10,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
+import voluptuous as vol
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import HubAuthError, HubClient, HubConnectionError, ModuleMissingError
 from .const import DOMAIN, POLL_INTERVAL
+from .schema import STATE_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,8 +72,7 @@ class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
         try:
             changed = await self.client.register_webhook(self.webhook_url)
             if changed or not self._synced:
-                self.match = await self.client.get_match_state()
-                self._synced = True
+                self._load_state(await self.client.get_match_state())
         except ModuleMissingError:
             self._synced = False
             self.match = dict(EMPTY_MATCH)
@@ -85,6 +86,21 @@ class IoDartsCoordinator(DataUpdateCoordinator[HubData]):
             )
             return
         ir.async_delete_issue(self.hass, DOMAIN, "module_missing")
+
+    def _load_state(self, raw: dict[str, Any]) -> None:
+        """Take a polled state only if it passes the same schema as webhook pushes.
+
+        An invalid state leaves the match empty and stays unsynced, so the next
+        poll fetches it again. The payload is not logged (it comes from the hub).
+        """
+        try:
+            self.match = STATE_SCHEMA(raw)
+        except vol.Invalid as err:
+            _LOGGER.warning("Ignoring invalid match state from the hub module at %s", err.path)
+            self.match = dict(EMPTY_MATCH)
+            self._synced = False
+            return
+        self._synced = True
 
     @callback
     def handle_push(self, payload: dict[str, Any]) -> None:

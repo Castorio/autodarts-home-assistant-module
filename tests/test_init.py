@@ -10,6 +10,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.io_darts.const import DOMAIN
+from custom_components.io_darts.coordinator import EMPTY_MATCH
 
 from .const import ENTRY_DATA, MATCH, MODULES, STATUS, URL, WEBHOOK_ID, routes
 
@@ -89,6 +90,27 @@ async def test_refetches_state_when_the_registration_changed(hass, aioclient_moc
     assert posted[0][2] == {"url": f"{HA_URL}/api/webhook/{WEBHOOK_ID}"}
     assert len(calls(aioclient_mock, "GET", routes("/state"))) == 1
     assert entry.runtime_data.match == newer
+
+
+async def test_invalid_polled_state_is_dropped_and_retried(hass, aioclient_mock, ha_url, caplog):
+    bad = {**MATCH, "players": [{"index": 0, "name": "x" * 201, "score": 1, "legsWon": 0, "setsWon": 0}]}
+    mock_hub(aioclient_mock, changed=False, state=bad)
+    entry = await setup_entry(hass)
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.runtime_data.match == EMPTY_MATCH
+    assert "Ignoring invalid match state" in caplog.text
+    assert "x" * 201 not in caplog.text
+    # Not synced yet, so the next poll fetches the state again even though nothing changed
+    aioclient_mock.clear_requests()
+    mock_hub(aioclient_mock, changed=False)
+    await poll(hass)
+    assert entry.runtime_data.match == MATCH
+
+
+async def test_polled_state_drops_unknown_fields(hass, aioclient_mock, ha_url):
+    mock_hub(aioclient_mock, state={**MATCH, "extra": "x"})
+    entry = await setup_entry(hass)
+    assert entry.runtime_data.match == MATCH
 
 
 async def test_module_missing_creates_issue(hass, aioclient_mock, ha_url):

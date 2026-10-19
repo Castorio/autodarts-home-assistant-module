@@ -121,6 +121,24 @@ async def test_hub_actions(hass, aioclient_mock):
     assert aioclient_mock.call_count == 4
 
 
+async def test_get_modules_keeps_only_well_formed_entries(hass, aioclient_mock):
+    good = {"id": "wled", "name": "WLED", "status": "running"}
+    no_status = {"id": "caller", "name": "Caller"}
+    aioclient_mock.get(
+        f"{URL}/api/modules",
+        json=[
+            good,
+            no_status,
+            "wled",
+            {"id": 5, "name": "x"},
+            {"id": "a"},
+            {"id": "b", "name": None},
+            {"id": "c", "name": "C", "status": 1},
+        ],
+    )
+    assert await client(hass, None, None).get_modules() == [good, no_status]
+
+
 @pytest.mark.parametrize(
     ("module_id", "action"),
     [("../settings", "stop"), ("wled", "delete"), ("WLED/x", "start")],
