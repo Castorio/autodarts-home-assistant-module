@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json as json_lib
 import re
 from typing import Any
 
@@ -73,28 +74,49 @@ class HubClient:
 
     async def _request(self, method: str, path: str, json: Any = None, retry: bool = True) -> Any:
         headers = {"Cookie": f"{SESSION_COOKIE}={self._cookie}"} if self._cookie else {}
+        retry_needed = False
+        text: str | None = None
         try:
             async with self._session.request(
                 method, f"{self._url}{path}", json=json, headers=headers, timeout=self._timeout
             ) as resp:
-                if resp.status == 401:
-                    if retry and self._username:
-                        await self.login()
-                        return await self._request(method, path, json, retry=False)
+                if resp.status == 401 and retry and self._username:
+                    # Note the retry; the actual login + retry happens after this
+                    # response context has been exited below.
+                    retry_needed = True
+                elif resp.status == 401:
                     raise HubAuthError("session rejected")
-                if path.startswith(MODULE_ROUTES) and resp.status in (404, 503):
+                elif path.startswith(MODULE_ROUTES) and resp.status in (404, 503):
                     raise ModuleMissingError(f"{method} {path}: HTTP {resp.status}")
-                if resp.status >= 400:
+                elif resp.status >= 400:
                     raise HubConnectionError(f"{method} {path}: HTTP {resp.status}")
-                return await resp.json(content_type=None)
+                else:
+                    text = await resp.text()
         except (aiohttp.ClientError, TimeoutError) as err:
             raise HubConnectionError(str(err)) from err
 
+        if retry_needed:
+            await self.login()
+            return await self._request(method, path, json, retry=False)
+
+        if not text:
+            return None
+        try:
+            return json_lib.loads(text)
+        except ValueError as err:
+            raise HubConnectionError("invalid JSON from hub") from err
+
     async def get_status(self) -> dict[str, Any]:
-        return await self._request("GET", "/api/status")
+        result = await self._request("GET", "/api/status")
+        if not isinstance(result, dict):
+            raise HubConnectionError("expected a JSON object from /api/status")
+        return result
 
     async def get_modules(self) -> list[dict[str, Any]]:
-        return await self._request("GET", "/api/modules")
+        result = await self._request("GET", "/api/modules")
+        if not isinstance(result, list):
+            raise HubConnectionError("expected a JSON array from /api/modules")
+        return result
 
     async def module_action(self, module_id: str, action: str) -> None:
         if not _MODULE_ID.match(module_id) or action not in _MODULE_ACTIONS:
@@ -111,6 +133,8 @@ class HubClient:
 
     async def webhook_registered(self) -> bool:
         result = await self._request("GET", f"{MODULE_ROUTES}/webhook")
+        if not isinstance(result, dict):
+            raise HubConnectionError("expected a JSON object from the webhook route")
         return bool(result.get("registered"))
 
     async def register_webhook(self, url: str) -> None:
@@ -120,7 +144,10 @@ class HubClient:
         await self._request("DELETE", f"{MODULE_ROUTES}/webhook")
 
     async def get_match_state(self) -> dict[str, Any]:
-        return await self._request("GET", f"{MODULE_ROUTES}/state")
+        result = await self._request("GET", f"{MODULE_ROUTES}/state")
+        if not isinstance(result, dict):
+            raise HubConnectionError("expected a JSON object from the state route")
+        return result
 
     async def trigger_intent(self, slot: int, data: str | None) -> None:
         body: dict[str, Any] = {"slot": slot}

@@ -24,7 +24,7 @@ async def test_login_stores_session_cookie(hass, aioclient_mock):
     c = client(hass)
     await c.login()
     assert await c.get_status() == STATUS
-    _, _, body, headers = aioclient_mock.mock_calls[0]
+    _, _, body, _ = aioclient_mock.mock_calls[0]
     assert body == {"username": "admin", "password": "pw"}
     assert aioclient_mock.mock_calls[1][3]["Cookie"] == "autodarts_session=sid1"
 
@@ -111,3 +111,20 @@ async def test_rejects_unsafe_module_actions(hass, module_id, action):
 async def test_rejects_unknown_autodarts_action(hass):
     with pytest.raises(ValueError):
         await client(hass, None, None).autodarts("reboot")
+
+
+async def test_module_action_accepts_empty_body(hass, aioclient_mock):
+    aioclient_mock.post(f"{URL}/api/modules/wled/stop", status=204)
+    await client(hass, None, None).module_action("wled", "stop")
+
+
+async def test_get_status_rejects_non_json_body(hass, aioclient_mock):
+    aioclient_mock.get(f"{URL}/api/status", text="not json")
+    with pytest.raises(HubConnectionError):
+        await client(hass, None, None).get_status()
+
+
+async def test_get_status_rejects_wrong_type(hass, aioclient_mock):
+    aioclient_mock.get(f"{URL}/api/status", json=["not", "a", "dict"])
+    with pytest.raises(HubConnectionError):
+        await client(hass, None, None).get_status()
