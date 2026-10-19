@@ -194,9 +194,9 @@ das nicht nach jedem Neustart des Hubs passiert.
 
 Gemeint ist die Web-Anmeldung des Hubs (die für die Hub-Oberfläche), nicht dein Autodarts-Konto.
 
-### Home Assistant has no internal URL the hub can reach
+### Home Assistant hat keine interne URL, die der Hub erreicht
 
-Die Integration lässt sich nicht einrichten und zeigt diese Meldung (Home Assistant versucht es
+Die Integration lässt sich nicht einrichten und zeigt die (englische) Meldung „Home Assistant has no internal URL the hub can reach“ (Home Assistant versucht es
 automatisch erneut), oder das Gerät zeigt keine Match-Werte, obwohl das Modul läuft. Stelle die interne URL ein wie unter
 [Voraussetzungen](#1-voraussetzungen) beschrieben. Der Webhook ist nur lokal erreichbar: Pushes, die
 über den Fernzugriff (z. B. Nabu Casa) kommen, lehnt Home Assistant absichtlich ab.
