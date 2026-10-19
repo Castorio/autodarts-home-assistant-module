@@ -238,3 +238,17 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements_test.txt
 .venv/bin/pytest
 ```
+
+## License
+
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). It is source available, not OSI open source.
+
+- Free for private and other non-commercial use.
+- You may modify the code and share it, including modified versions, for non-commercial purposes.
+- Commercial use requires a separate license. Contact: [info@castor.io](mailto:info@castor.io).
+
+The hub module builds on the IO-Darts-Agent module SDK, which is MIT licensed.
+
+## Disclaimer
+
+This is an unofficial project. It is not affiliated with, endorsed by or supported by Autodarts or Home Assistant. "Autodarts" is a trademark of its respective owner.
