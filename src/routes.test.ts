@@ -43,6 +43,12 @@ describe('routes', () => {
     expect(await handlers.registerWebhook(req('registerWebhook', null))).toEqual({ statusCode: 400, body: { error: 'url must be a string' } });
   });
 
+  it('treats an array body as not-an-object, even one carrying its own url property', async () => {
+    const { handlers } = setup();
+    const arrayWithUrl = Object.assign([], { url: GOOD }) as unknown;
+    expect(await handlers.registerWebhook(req('registerWebhook', arrayWithUrl))).toEqual({ statusCode: 400, body: { error: 'url must be a string' } });
+  });
+
   it('returns the match state', async () => {
     const { handlers } = setup();
     expect(await handlers.getState(req('getState'))).toEqual({ statusCode: 200, body: { ...emptySnapshot(), active: true } });

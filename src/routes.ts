@@ -20,7 +20,7 @@ export const ROUTES: ModuleRouteDefinition[] = [
 ];
 
 function body(raw: unknown): Record<string, unknown> {
-  return typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+  return typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
 }
 
 export function createRouteHandlers(deps: RouteDeps): Record<string, RouteHandler> {
