@@ -17,6 +17,10 @@ const MAPPING: Record<string, { type: PushType; fields: string[] }> = {
   'cricket.state': { type: 'state', fields: [] },
 };
 
+function num(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 function scalar(v: unknown): PushValue {
   if (typeof v === 'string') return v.slice(0, MAX_STRING);
   if (typeof v === 'boolean') return v;
@@ -60,8 +64,14 @@ export function mapEvent(event: { type: string; data: unknown }, state: MatchSna
     type = m.type;
     data = pick(d, m.fields);
     if (event.type === 'player.change') {
-      data.playerColor = state.currentPlayerColor;
-      data.nextPlayerColor = state.nextPlayerColor;
+      // state.currentPlayer was resolved by the tracker from THIS event's playerIndex (or
+      // left unchanged if it couldn't be resolved, e.g. after a bull-off or array rotation).
+      // Only trust the snapshot's colors when they belong to the player this event names;
+      // otherwise an unresolved event would leak the previous player's colors.
+      const eventPlayerIndex = num(d.playerIndex);
+      const resolved = eventPlayerIndex === null || state.currentPlayer?.index === eventPlayerIndex;
+      data.playerColor = resolved ? state.currentPlayerColor : null;
+      data.nextPlayerColor = resolved ? state.nextPlayerColor : null;
     }
     if (event.type === 'turn.finished') tags = turnTags(d as unknown as TurnLike);
   }

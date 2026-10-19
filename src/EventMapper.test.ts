@@ -68,9 +68,19 @@ describe('mapEvent', () => {
   });
 
   it('adds the player colors to player_changed', () => {
-    const colored = { ...state, currentPlayerColor: '#ef4444', nextPlayerColor: '#3b82f6' };
+    const currentPlayer = { index: 1, name: 'Bob', score: 241, legsWon: 0, setsWon: 0, color: '#ef4444' };
+    const colored = { ...state, currentPlayer, currentPlayerColor: '#ef4444', nextPlayerColor: '#3b82f6' };
     const p = mapEvent({ type: 'player.change', data: { playerName: 'Bob', playerIndex: 1, remaining: 241 } }, colored, now);
     expect(p?.data).toEqual({ playerName: 'Bob', playerIndex: 1, remaining: 241, playerColor: '#ef4444', nextPlayerColor: '#3b82f6' });
+  });
+
+  it('nulls the player colors when the event does not match the resolved current player', () => {
+    // state.currentPlayer is Alice (index 0), but this event claims playerIndex 2: the
+    // tracker could not resolve that player, so the old player's colors must not leak out.
+    const currentPlayer = { index: 0, name: 'Alice', score: 301, legsWon: 0, setsWon: 0, color: '#3b82f6' };
+    const mismatched = { ...state, currentPlayer, currentPlayerColor: '#3b82f6', nextPlayerColor: '#ef4444' };
+    const p = mapEvent({ type: 'player.change', data: { playerName: 'Carol', playerIndex: 2, remaining: 100 } }, mismatched, now);
+    expect(p?.data).toEqual({ playerName: 'Carol', playerIndex: 2, remaining: 100, playerColor: null, nextPlayerColor: null });
   });
 
   it('ignores unknown events', () => {

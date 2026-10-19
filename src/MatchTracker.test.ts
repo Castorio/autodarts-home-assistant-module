@@ -197,6 +197,34 @@ describe('player colors', () => {
     expect(t.snapshot().currentPlayerColor).toBe('#3b82f6');
   });
 
+  it('resolves player.change by the stable player index when the players array has rotated', () => {
+    const t = new MatchTracker();
+    // Players array rotated: Bob is now at position 0, Alice at position 1.
+    t.apply(
+      colored({
+        player: 0,
+        players: [
+          { index: 1, name: 'Bob', color: '#ef4444' },
+          { index: 0, name: 'Alice', color: '#3b82f6' },
+        ],
+        gameScores: [2, 1],
+      }),
+    );
+    // The hub still reports the array position (0) it rotated away from Alice,
+    // but the stable playerIndex (0) still correctly identifies Alice.
+    t.apply({ type: 'player.change', data: { currentPlayer: 0, playerIndex: 0, playerName: 'Alice' } });
+    expect(t.snapshot().currentPlayer?.name).toBe('Alice');
+    expect(t.snapshot().currentPlayerColor).toBe('#3b82f6');
+  });
+
+  it('ignores a player.change when neither the stable index nor the position resolves', () => {
+    const t = new MatchTracker();
+    t.apply(colored({ player: 0 }));
+    t.apply({ type: 'player.change', data: { currentPlayer: 7, playerIndex: 99 } });
+    expect(t.snapshot().currentPlayer?.name).toBe('Alice');
+    expect(t.snapshot().currentPlayerColor).toBe('#3b82f6');
+  });
+
   it('clears colors on match end', () => {
     const t = new MatchTracker();
     t.apply(colored({ player: 0 }));

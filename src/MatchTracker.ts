@@ -83,10 +83,18 @@ export class MatchTracker {
         if (isObj(d)) this.state.winnerName = str(d.winnerName);
         return;
       case 'player.change':
-        // The hub sends player.change before the match.state of the same update
+        // The hub sends player.change before the match.state of the same update, so this
+        // resolves against the players array from the PREVIOUS match.state. Resolve by the
+        // stable playerIndex first: after a bull-off or when the hub rotates the players
+        // array for the next leg, the array position (currentPlayer) can point at a
+        // different player. Fall back to the position only if playerIndex is missing or
+        // not found; if neither resolves, leave the current player unchanged.
         if (isObj(d)) {
-          const position = num(d.currentPlayer);
-          if (position !== null && Number.isInteger(position) && position >= 0 && position < this.state.players.length) {
+          const players = this.state.players;
+          const wantedIndex = num(d.playerIndex);
+          const byStableIndex = wantedIndex === null ? -1 : players.findIndex((p) => p.index === wantedIndex);
+          const position = byStableIndex !== -1 ? byStableIndex : num(d.currentPlayer);
+          if (position !== null && Number.isInteger(position) && position >= 0 && position < players.length) {
             this.currentPosition = position;
             this.updateCurrentPlayer();
           }
@@ -149,10 +157,16 @@ export class MatchTracker {
   private updateCurrentPlayer(): void {
     const players = this.state.players;
     const position = this.currentPosition;
-    const current = position === null ? undefined : players[position];
-    const next = current && players.length > 0 ? players[(position! + 1) % players.length] : undefined;
-    this.state.currentPlayer = current ? { ...current } : null;
-    this.state.currentPlayerColor = current?.color ?? null;
-    this.state.nextPlayerColor = next?.color ?? null;
+    if (position === null || position < 0 || position >= players.length) {
+      this.state.currentPlayer = null;
+      this.state.currentPlayerColor = null;
+      this.state.nextPlayerColor = null;
+      return;
+    }
+    const current = players[position];
+    const next = players[(position + 1) % players.length];
+    this.state.currentPlayer = { ...current };
+    this.state.currentPlayerColor = current.color;
+    this.state.nextPlayerColor = next.color;
   }
 }
