@@ -3,26 +3,33 @@ export type RegisterResult = { ok: true } | { ok: false; error: string };
 const MAX_URL_LENGTH = 512;
 const WEBHOOK_PATH = /^\/api\/webhook\/[A-Za-z0-9_-]{8,128}$/;
 
+function normalizeHosts(hosts: string[]): string[] {
+  return hosts.map((h) => h.trim().toLowerCase()).filter((h) => h.length > 0);
+}
+
 export function parseAllowedHosts(value: unknown): string[] {
   if (typeof value !== 'string') return [];
-  return value
-    .split(',')
-    .map((h) => h.trim().toLowerCase())
-    .filter((h) => h.length > 0);
+  return normalizeHosts(value.split(','));
 }
 
 export function maskWebhookUrl(url: string): string {
-  return url.replace(/(\/api\/webhook\/)([A-Za-z0-9_-]{4})[A-Za-z0-9_-]*/, '$1$2…');
+  return url.replace(/(\/api\/webhook\/)([A-Za-z0-9_-]*)/, (_match, prefix: string, id: string) => {
+    const visible = id.length > 4 ? id.slice(0, 4) : '';
+    return `${prefix}${visible}…`;
+  });
 }
 
 /** Holds the Home Assistant webhook URL in memory only, after validating it */
 export class WebhookRegistry {
   private current: string | null = null;
+  private allowedHosts: string[];
 
-  constructor(private allowedHosts: string[] = []) {}
+  constructor(allowedHosts: string[] = []) {
+    this.allowedHosts = normalizeHosts(allowedHosts);
+  }
 
   setAllowedHosts(hosts: string[]): void {
-    this.allowedHosts = hosts;
+    this.allowedHosts = normalizeHosts(hosts);
   }
 
   get url(): string | null {

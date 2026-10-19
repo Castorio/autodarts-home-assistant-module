@@ -46,6 +46,17 @@ describe('WebhookRegistry', () => {
     expect(r.register('http://HA.local:8123/api/webhook/abcdef0123456789')).toEqual({ ok: true });
   });
 
+  it('normalizes allowlist entries passed to the constructor (trim + lowercase)', () => {
+    const r = new WebhookRegistry(['HA.Local']);
+    expect(r.register('http://ha.local:8123/api/webhook/abcdef0123456789')).toEqual({ ok: true });
+  });
+
+  it('normalizes allowlist entries passed to setAllowedHosts (trim + lowercase)', () => {
+    const r = new WebhookRegistry();
+    r.setAllowedHosts(['HA.Local']);
+    expect(r.register('http://ha.local:8123/api/webhook/abcdef0123456789')).toEqual({ ok: true });
+  });
+
   it('clears the URL', () => {
     const r = new WebhookRegistry();
     r.register(GOOD);
@@ -66,5 +77,9 @@ describe('parseAllowedHosts', () => {
 describe('maskWebhookUrl', () => {
   it('keeps only the first 4 characters of the webhook id', () => {
     expect(maskWebhookUrl(GOOD)).toBe('http://192.168.41.10:8123/api/webhook/abcd…');
+  });
+
+  it('masks ids shorter than 5 characters entirely (no partial leak)', () => {
+    expect(maskWebhookUrl('http://ha/api/webhook/ab')).toBe('http://ha/api/webhook/…');
   });
 });
